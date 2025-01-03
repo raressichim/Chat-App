@@ -1,4 +1,9 @@
 const db = require('../db_config/dbInit')
+require('dotenv').config();
+const jwt = require('jsonwebtoken');
+
+const jwtSecret = process.env.JWT_SECRET
+const jwtExpireTime = process.env.JWT_EXPIRES_TIME
 
 const getAllUsers = (req, res) => {
     res.send('you want to get all users')
@@ -56,7 +61,13 @@ const loginUser = async (req, res) => {
     });
 
     if (auth) {
-        res.status(200).send('sampleToken')
+        const token = jwt.sign({ email: email }, jwtSecret, { expiresIn: jwtExpireTime });
+
+        res.cookie('sessionToken', token, {
+            httpOnly: true, // Prevent access via JavaScript
+            maxAge: 3600000, // 1 hour in milliseconds
+        });
+        res.status(200).send('Authorized')
     } else {
         res.status(401).send('Unauthorized')
     }

@@ -4,12 +4,16 @@ const httpLogger = require('morgan');
 const cors = require('cors');
 const port = 3000;
 const userRouter = require('./userManagement/userController');
-
+const cookieParser = require('cookie-parser');
+app.use(cors({
+  origin: 'http://localhost:8080',
+  credentials: true,
+}));
 app.use(httpLogger('dev'));
-app.use(cors()) //see more at https://www.npmjs.com/package/cors
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json()) //we expect JSON data to be sent as payloads
 app.use(userRouter);
+app.use(cookieParser());
 
 app.get('/', (req, res) => {
   res.send('Hello World!')

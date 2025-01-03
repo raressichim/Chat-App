@@ -44,6 +44,8 @@
 </template>
 
 <script>
+import axios from "@/plugins/axios"
+
 async function createUser(userData) {
     try {
         const response = await fetch("http://localhost:3000/users", {
@@ -66,25 +68,12 @@ async function createUser(userData) {
     }
 }
 
-async function loginUser(userData) {
+async function loginUser(email,password) {
     try {
-        const response = await fetch("http://localhost:3000/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(userData)
-        });
-
-        if (response.ok) {
-            const result = await response.json();
-            console.log("User logged in successfully:", result);
-        } else {
-            const error = await response.json();
-            console.error("Error logging in user:", error);
-        }
-    } catch (err) {
-        console.error("Network error:", err);
+        const response = await axios.post('/login', { email, password });
+        console.log(response.data.message);
+    } catch (error) {
+        console.error(error.response?.data?.message || 'Login failed');
     }
 }
 
@@ -113,15 +102,10 @@ export default {
     },
     methods: {
         login() {
-            const userData = {
-                email: this.email,
-                password: this.password
-            };
-
-            loginUser(userData)
+            loginUser(this.email,this.password)
                 .then(() => {
                     this.errorMessage = "";
-                    this.$router.replace({ name: "dashboard", params: { userData } });
+                    this.$router.replace({ name: "dashboard", params: { } });
                 })
                 .catch(err => {
                     this.errorMessage = "Failed to login user. Please try again.";
