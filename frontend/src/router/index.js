@@ -9,7 +9,7 @@ const routes = [
     component: LoginPage
   },
   {
-    path: '/dashboard',
+    path: '/dashboard/:email',
     name: 'dashboard',
     component: MessagesDashboard
   },
