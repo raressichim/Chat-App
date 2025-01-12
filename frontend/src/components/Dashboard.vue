@@ -59,6 +59,7 @@ export default {
       otherUsers: [],
       messageStatus: "",
       selectedUserEmail: "",
+      currentChat: "",
     };
   },
   computed: {
@@ -82,12 +83,41 @@ export default {
         this.otherUsers = [];
       }
     },
-    selectUser(email) {
+    async selectUser(email) {
       this.selectedUserEmail = email;
       console.log(this.selectedUserEmail);
+      try {
+        const response = await axios.post("/chats", {
+          senderEmail: this.userEmail,
+          recipientEmail: email,
+        });
+        this.currentChat = response.data.chatId;
+        console.log("Current chat id: " + this.currentChat);
+      } catch (err) {
+        console.err(err);
+      }
     },
 
-    //sendMessage(senderEmail, receiverEmail) {},
+    async sendMessage() {
+      if (!this.selectedUserEmail || !this.newMessage.trim()) {
+        console.warn("Recipient or message is missing.");
+        return;
+      }
+
+      const message = {
+        senderEmail: this.userEmail,
+        recipientEmail: this.selectedUserEmail,
+        messageData: this.newMessage.trim(),
+        chatId: this.currentChat,
+        createdAt: new Date(),
+      };
+
+      try {
+        await socketService.sendMessage(message);
+      } catch (err) {
+        console.error(err);
+      }
+    },
   },
 };
 </script>

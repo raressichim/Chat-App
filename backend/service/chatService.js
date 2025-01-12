@@ -1,9 +1,9 @@
 const db = require("../db_config/dbInit");
 
 const createChat = async (req, res) => {
-  const { firstId, secondId } = req.body;
+  const { senderEmail, recipientEmail } = req.body;
   try {
-    const foundChat = await findChat(firstId, secondId);
+    const foundChat = await findChat(senderEmail, recipientEmail);
     if (foundChat) {
       return res.status(200).json({
         chatId: foundChat,
@@ -11,8 +11,8 @@ const createChat = async (req, res) => {
     }
 
     const newChat = {
-      firstId: firstId,
-      secondId: secondId,
+      firstEmail: senderEmail,
+      secondEmail: recipientEmailEmail,
       createdAt: new Date(),
     };
 
@@ -25,8 +25,7 @@ const createChat = async (req, res) => {
     console.log("New chat data: ", chatData);
 
     res.status(201).json({
-      id: addedChat.id,
-      ...addedChat,
+      chatId: addedChat.id,
     });
   } catch (err) {
     console.error(err);
@@ -34,15 +33,15 @@ const createChat = async (req, res) => {
   }
 };
 
-const findChat = async (firstId, secondId) => {
+const findChat = async (firstEmail, secondEmail) => {
   const chatRef = db.collection("chats");
   const query1 = chatRef
-    .where("firstId", "==", firstId)
-    .where("secondId", "==", secondId);
+    .where("firstEmail", "==", firstEmail)
+    .where("secondEmail", "==", secondEmail);
 
   const query2 = chatRef
-    .where("firstId", "==", secondId)
-    .where("secondId", "==", firstId);
+    .where("firstEmail", "==", secondEmail)
+    .where("secondEmail", "==", firstEmail);
 
   const [snapshot1, snapshot2] = await Promise.all([
     query1.get(),
@@ -63,11 +62,11 @@ const findChat = async (firstId, secondId) => {
 };
 
 const getUserChats = async (req, res) => {
-  const { userId } = req.params;
+  const { userEmail } = req.params;
   try {
     const chatRef = db.collection("chats");
-    const query1 = chatRef.where("firstId", "==", userId).get();
-    const query2 = chatRef.where("secondId", "==", userId).get();
+    const query1 = chatRef.where("firstEmail", "==", userEmail).get();
+    const query2 = chatRef.where("secondEmail", "==", userEmail).get();
 
     const [snapshot1, snapshot2] = await Promise.all([query1, query2]);
 
@@ -83,8 +82,37 @@ const getUserChats = async (req, res) => {
   }
 };
 
+const sendMessage = async (data, onlineUsers) => {
+  const message = data.message;
+  const recipient = onlineUsers.find(
+    (user) => user.email === message.recipientEmail
+  );
+  console.log(recipient);
+
+  if (recipient) {
+    io.to(user.socketId).emit("getMessage", message);
+  }
+  console.log(message);
+  try {
+    console.log(message.chatId);
+    const messageRef = db
+      .collection("chats")
+      .doc(message.chatId)
+      .collection(chatRef, "messages");
+    const newMessageRef = await messageRef.add({
+      text: message.messageData,
+      sender: message.senderEmail,
+      createdAt: new Date(),
+    });
+    return newMessageRef.id;
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 module.exports = {
   createChat,
   getUserChats,
   findChat,
+  sendMessage,
 };

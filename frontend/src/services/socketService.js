@@ -21,11 +21,11 @@ const socketService = {
     });
   },
 
-  async fetchMessages(firstId, secondId) {
+  async fetchMessages(firstEmail, secondEmail) {
     try {
       const chatId = await axios.post("/chats", {
-        firstId: firstId,
-        secondId: secondId,
+        firstEmail: firstEmail,
+        secondEmail: secondEmail,
       });
       const response = await axios.get(`/chats/${chatId}/messages`);
 
@@ -39,27 +39,20 @@ const socketService = {
     }
   },
 
-  async sendMessage(senderEmail, messageData, recipientEmail) {
+  async sendMessage(message) {
     if (this.socket === null) {
       console.warn("Socket not connected");
       return;
     }
 
     this.socket.emit("sendMessage", {
-      senderEmail,
-      messageData,
-      recipientEmail,
+      message,
     });
 
     try {
-      const chatId = await axios.post("/chats", {
-        firstId: senderEmail,
-        secondId: recipientEmail,
-      });
+      const chatId = message.chatId;
       const response = await axios.post(`/chats/${chatId}/messages`, {
-        senderEmail,
-        recipientEmail,
-        messageData,
+        message,
       });
       console.log("Message saved to backend:", response.data);
     } catch (error) {

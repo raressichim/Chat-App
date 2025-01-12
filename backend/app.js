@@ -43,28 +43,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("sendMessage", async (message) => {
-    const recipient = onlineUsers.find(
-      (user) => user.email === message.recipientEmail
-    );
-
-    if (recipient) {
-      io.to(user.socketId).emit("getMessage", message);
-    }
-
-    const chatId = await chatService.findChat(
-      message.senderEmail,
-      message.recipientEmail
-    );
-    const chatRef = doc(db, "chats", chatId);
-    const messageRef = collection(chatRef, "messages");
-    await addDoc(messageRef, {
-      senderEmail: message.senderEmail,
-      recipientEmail: message.recipientEmail,
-      content: message.messageData,
-      timestamp: new Date(),
-      read: recipient ? true : false,
-    });
-    await setDoc(chatRef, { lastMessage: message }, { merge: true });
+    await chatService.sendMessage(message, onlineUsers);
   });
 
   socket.on("disconnect", () => {
