@@ -84,29 +84,39 @@ const getUserChats = async (req, res) => {
 
 const sendMessage = async (data, onlineUsers) => {
   const message = data.message;
+
   const recipient = onlineUsers.find(
     (user) => user.email === message.recipientEmail
   );
-  console.log(recipient);
 
   if (recipient) {
-    io.to(user.socketId).emit("getMessage", message);
+    io.to(recipient.socketId).emit("getMessage", message);
   }
-  console.log(message);
+
+  console.log("chatId:", message.chatId);
   try {
-    console.log(message.chatId);
-    const messageRef = db
-      .collection("chats")
-      .doc(message.chatId)
-      .collection(chatRef, "messages");
+    const chatDocRef = db.collection("chats").doc(message.chatId);
+    const chatDoc = await chatDocRef.get();
+    if (!chatDoc.exists) {
+      console.error("Chat document does not exist. Creating it now.");
+      await chatDocRef.set({
+        firstEmail: message.recipientEmail,
+        secondEmail: message.senderEmail,
+        createdAt: new Date(),
+      });
+    }
+
+    const messageRef = chatDocRef.collection("messages");
     const newMessageRef = await messageRef.add({
       text: message.messageData,
       sender: message.senderEmail,
       createdAt: new Date(),
     });
+
+    console.log("Message successfully added with ID:", newMessageRef.id);
     return newMessageRef.id;
   } catch (err) {
-    console.log(err);
+    console.error("Error adding message:", err);
   }
 };
 
