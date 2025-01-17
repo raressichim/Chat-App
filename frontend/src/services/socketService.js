@@ -48,19 +48,6 @@ const socketService = {
     this.socket.emit("sendMessage", {
       message,
     });
-
-    // try {
-    //   const chatId = message.chatId;
-    //   const response = await axios.post(`/chats/${chatId}/messages`, {
-    //     message,
-    //   });
-    //   console.log("Message saved to backend:", response.data);
-    // } catch (error) {
-    //   console.error(
-    //     "Error saving message:",
-    //     error.response?.data || error.message
-    //   );
-    // }
   },
 
   disconnect() {

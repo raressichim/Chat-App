@@ -43,7 +43,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("sendMessage", async (message) => {
-    await chatService.sendMessage(message, onlineUsers);
+    await chatService.sendMessage(message, onlineUsers, io);
   });
 
   socket.on("disconnect", () => {

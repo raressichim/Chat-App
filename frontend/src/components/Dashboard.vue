@@ -8,29 +8,30 @@
         </li>
       </ul>
     </section>
-    <section class="messages-container">
+    <section class="messages-container" ref="messagesContainer">
       <ul class="messages-list">
         <li
           v-for="message in messages"
           :key="message.id"
           :class="{
-            'my-message': message.uid === currentUser,
-            'other-message': message.uid !== currentUser,
+            'my-message': message.sender === userEmail,
+            'other-message': message.sender !== userEmail,
           }"
           class="message"
         >
           <div class="message-wrap">
             <div class="message-wrap-content">
-              <p>
-                {{ message.text }}
-              </p>
-              <small class="time">{{
-                message.createdAt?.toDate().toLocaleTimeString()
-              }}</small>
+              <p>{{ message.text }}</p>
+              <small class="time">
+                {{
+                  message.createdAt && message.createdAt._seconds
+                    ? new Date(
+                        message.createdAt._seconds * 1000
+                      ).toLocaleTimeString()
+                    : "No Date Available"
+                }}
+              </small>
             </div>
-          </div>
-          <div class="conversation-name">
-            {{ message.user }}
           </div>
         </li>
       </ul>
@@ -50,6 +51,7 @@
 <script>
 import socketService from "../services/socketService";
 import axios from "@/plugins/axios";
+import { nextTick } from "vue";
 
 export default {
   name: "MessagesDashboard",
@@ -57,9 +59,10 @@ export default {
     return {
       email: "",
       otherUsers: [],
-      messageStatus: "",
       selectedUserEmail: "",
       currentChat: "",
+      messages: [],
+      newMessage: "",
     };
   },
   computed: {
@@ -70,6 +73,16 @@ export default {
   mounted() {
     this.fetchOtherUsers(this.userEmail);
     socketService.connect(this.userEmail);
+    this.messages = [];
+
+    socketService.socket.on("getMessage", (message) => {
+      console.log("Message receiver: ", message);
+      this.messages.push(message);
+      nextTick(() => {
+        const messagesContainer = this.$refs.messagesContainer;
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      });
+    });
   },
   methods: {
     async fetchOtherUsers(email) {
@@ -88,13 +101,31 @@ export default {
       console.log(this.selectedUserEmail);
       try {
         const response = await axios.post("/chats", {
-          senderEmail: this.userEmail,
-          recipientEmail: email,
+          sender: this.userEmail,
+          recipient: email,
         });
         this.currentChat = response.data.chatId;
         console.log("Current chat id: " + this.currentChat);
+        const messagesResponse = await axios.get("/chats/messages", {
+          params: {
+            firstEmail: this.userEmail,
+            secondEmail: this.selectedUserEmail,
+          },
+        });
+        this.messages = messagesResponse.data.messages;
+        console.log(
+          "Conversation loaded between " +
+            this.userEmail +
+            " and " +
+            this.selectedUserEmail
+        );
+
+        nextTick(() => {
+          const messagesContainer = this.$refs.messagesContainer;
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        });
       } catch (err) {
-        console.err(err);
+        console.error(err);
       }
     },
 
@@ -105,12 +136,35 @@ export default {
       }
 
       const message = {
-        senderEmail: this.userEmail,
-        recipientEmail: this.selectedUserEmail,
-        messageData: this.newMessage.trim(),
+        sender: this.userEmail,
+        recipient: this.selectedUserEmail,
+        text: this.newMessage.trim(),
         chatId: this.currentChat,
-        createdAt: new Date(),
+        createdAt: {
+          _seconds: Math.floor(new Date().getTime() / 1000), // Timestamp in seconds
+          _nanoseconds: new Date().getMilliseconds() * 1000000, // Convert milliseconds to nanoseconds
+        },
       };
+      console.log(message);
+      this.messages.push(message);
+      nextTick(() => {
+        const messagesContainer = this.$refs.messagesContainer;
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      });
+      this.newMessage = "";
+      try {
+        const response = await axios.post("/chats/messages", {
+          message,
+        });
+        if (response !== null) {
+          console.log("Message saved to backend:", response.data);
+        }
+      } catch (error) {
+        console.error(
+          "Error saving message:",
+          error.response?.data || error.message
+        );
+      }
 
       try {
         await socketService.sendMessage(message);
@@ -243,5 +297,11 @@ export default {
 }
 .user-item:last-child {
   border-bottom: none;
+}
+.messages-container {
+  flex-grow: 1;
+  padding: 20px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
 }
 </style>

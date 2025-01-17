@@ -1,18 +1,19 @@
 const db = require("../db_config/dbInit");
 
 const createChat = async (req, res) => {
-  const { senderEmail, recipientEmail } = req.body;
+  const { sender, recipient } = req.body;
   try {
-    const foundChat = await findChat(senderEmail, recipientEmail);
+    const foundChat = await findChat(sender, recipient);
     if (foundChat) {
+      console.log("Chat already exists");
       return res.status(200).json({
         chatId: foundChat,
       });
     }
 
     const newChat = {
-      firstEmail: senderEmail,
-      secondEmail: recipientEmailEmail,
+      firstEmail: sender,
+      secondEmail: recipient,
       createdAt: new Date(),
     };
 
@@ -49,8 +50,6 @@ const findChat = async (firstEmail, secondEmail) => {
   ]);
 
   if (!snapshot1.empty || !snapshot2.empty) {
-    console.log("Chat already exists");
-
     const existingChatSnapshot = !snapshot1.empty
       ? snapshot1.docs[0]
       : snapshot2.docs[0];
@@ -82,41 +81,71 @@ const getUserChats = async (req, res) => {
   }
 };
 
-const sendMessage = async (data, onlineUsers) => {
+const sendMessage = async (data, onlineUsers, io) => {
   const message = data.message;
 
   const recipient = onlineUsers.find(
-    (user) => user.email === message.recipientEmail
+    (user) => user.email === message.recipient
   );
 
   if (recipient) {
     io.to(recipient.socketId).emit("getMessage", message);
   }
+};
 
-  console.log("chatId:", message.chatId);
+const storeMessage = async (req, res) => {
+  const message = req.body.message;
+  console.log(message);
   try {
     const chatDocRef = db.collection("chats").doc(message.chatId);
     const chatDoc = await chatDocRef.get();
     if (!chatDoc.exists) {
       console.error("Chat document does not exist. Creating it now.");
       await chatDocRef.set({
-        firstEmail: message.recipientEmail,
-        secondEmail: message.senderEmail,
+        firstEmail: message.recipient,
+        secondEmail: message.sender,
         createdAt: new Date(),
       });
     }
 
     const messageRef = chatDocRef.collection("messages");
     const newMessageRef = await messageRef.add({
-      text: message.messageData,
-      sender: message.senderEmail,
+      text: message.text,
+      sender: message.sender,
       createdAt: new Date(),
     });
 
     console.log("Message successfully added with ID:", newMessageRef.id);
-    return newMessageRef.id;
+    res.status(200).json({ messageId: newMessageRef.id });
   } catch (err) {
-    console.error("Error adding message:", err);
+    console.error("Error storing message:", err);
+  }
+};
+
+const getConversation = async (req, res) => {
+  const { firstEmail, secondEmail } = req.query;
+  try {
+    chatId = await findChat(firstEmail, secondEmail);
+    if (chatId) {
+      const messagesRef = db
+        .collection("chats")
+        .doc(chatId)
+        .collection("messages");
+      const snapshot = await messagesRef.orderBy("createdAt", "asc").get();
+      const messages = [];
+      snapshot.forEach((doc) => {
+        messages.push({ id: doc.id, ...doc.data() });
+      });
+      res.status(200).json({ messages });
+    } else {
+      console.error("Chat not found");
+      res.status(404).json({ error: "Chat not found" });
+    }
+  } catch (err) {
+    console.error("Internal server error occured when getting the messages");
+    res
+      .status(500)
+      .json("Internal server error occured when getting the messages");
   }
 };
 
@@ -125,4 +154,6 @@ module.exports = {
   getUserChats,
   findChat,
   sendMessage,
+  storeMessage,
+  getConversation,
 };
