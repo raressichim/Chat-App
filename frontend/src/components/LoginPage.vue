@@ -75,6 +75,7 @@
                     placeholder="confirm password"
                     required
                   ></v-text-field>
+
                   <div class="red--text">{{ errorMessage }}</div>
                   <v-btn
                     type="submit"
@@ -107,23 +108,11 @@ import axios from "@/plugins/axios";
 
 async function createUser(userData) {
   try {
-    const response = await fetch("http://localhost:3000/users", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userData),
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      console.log("User created successfully:", result);
-    } else {
-      const error = await response.json();
-      console.error("Error creating user:", error);
-    }
-  } catch (err) {
-    console.error("Network error:", err);
+    const response = await axios.post("/users", userData);
+    return response.data;
+  } catch (error) {
+    console.error(error.response?.data?.message || "Registration failed");
+    throw new Error(error.response?.data?.message || "Login failed");
   }
 }
 
@@ -178,7 +167,7 @@ export default {
         console.error("Error during logging in:", err);
       }
     },
-    register() {
+    async register() {
       if (this.password === this.confirmPassword) {
         const userData = {
           firstName: this.firstName,
@@ -188,16 +177,19 @@ export default {
           password: this.password,
         };
 
-        createUser(userData)
-          .then(() => {
-            this.isRegister = false;
-            this.errorMessage = "";
-            this.$refs.form.reset();
-          })
-          .catch((err) => {
-            this.errorMessage = "Failed to register user. Please try again.";
-            console.error("Error during registration:", err);
-          });
+        try {
+          await createUser(userData);
+          this.isRegister = false;
+          this.errorMessage = "";
+          this.$refs.form.reset();
+        } catch (err) {
+          const backendErrors = err.errors || [];
+          const firstErrorMessage =
+            backendErrors.length > 0
+              ? backendErrors[0].msg
+              : "Registration failed";
+          this.errorMessage = firstErrorMessage;
+        }
       } else {
         this.errorMessage = "Passwords do not match";
       }
@@ -230,5 +222,8 @@ export default {
 
 .toggle-link:hover {
   color: #1976d2;
+}
+.red--text {
+  color: red;
 }
 </style>

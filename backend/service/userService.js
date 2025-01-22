@@ -5,6 +5,8 @@ const jwt = require("jsonwebtoken");
 const jwtSecret = process.env.JWT_SECRET;
 const jwtExpireTime = process.env.JWT_EXPIRES_TIME;
 
+const bcrypt = require("bcrypt");
+
 const getAllUsers = (req, res) => {
   res.send("you want to get all users");
 };
@@ -31,7 +33,18 @@ const getOthers = async (req, res) => {
     res.status(500).send(JSON.stringify(err));
   }
 };
+
+const hashPassword = async (password) => {
+  const saltRounds = 10;
+  return await bcrypt.hash(password, saltRounds);
+};
+
+const verifyPassword = async (plainPassword, hashedPassword) => {
+  return await bcrypt.compare(plainPassword, hashedPassword);
+};
+
 const registerUser = async (req, res) => {
+  console.log(req.body);
   const { firstName, lastName, username, email, password } = req.body;
 
   if (!firstName || !lastName || !email) {
@@ -43,7 +56,7 @@ const registerUser = async (req, res) => {
     lastName: lastName,
     username: username,
     email: email,
-    password: password,
+    password: await hashPassword(password),
   };
 
   try {
@@ -63,6 +76,7 @@ const registerUser = async (req, res) => {
     res.status(500).send(JSON.stringify(error));
   }
 };
+
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -71,22 +85,21 @@ const loginUser = async (req, res) => {
     password: password,
   };
 
-  let auth = false;
-
   const querySnapshot = await db
     .collection("users")
     .where("email", "==", userToAuthenticate.email)
     .limit(1)
     .get();
 
-  querySnapshot.forEach((element) => {
-    console.log("A user matching the email address has been found.");
-    const userData = element.data();
+  if (querySnapshot.empty) {
+    return res.status(401).send("Unauthorized");
+  }
 
-    if (userData.password === userToAuthenticate.password) auth = true;
-  });
+  const userData = querySnapshot.docs[0].data();
 
-  if (auth) {
+  const isPasswordValid = await verifyPassword(password, userData.password);
+
+  if (isPasswordValid) {
     const token = jwt.sign({ email: email }, jwtSecret, {
       expiresIn: jwtExpireTime,
     });

@@ -7,7 +7,7 @@ const userRouter = require("./controller/userController");
 const chatRouter = require("./controller/chatController");
 const chatService = require("./service/chatService");
 const cookieParser = require("cookie-parser");
-const http = require("http"); // Core Node.js HTTP module
+const http = require("http");
 const { Server } = require("socket.io");
 
 app.use(
@@ -18,9 +18,9 @@ app.use(
 );
 app.use(httpLogger("dev"));
 app.use(express.urlencoded({ extended: false }));
-app.use(express.json()); //we expect JSON data to be sent as payloads
-app.use(userRouter, chatRouter);
+app.use(express.json());
 app.use(cookieParser());
+app.use(userRouter, chatRouter);
 
 const server = http.createServer(app);
 const io = new Server(server, {
