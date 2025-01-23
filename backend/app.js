@@ -46,6 +46,12 @@ io.on("connection", (socket) => {
     await chatService.sendMessage(message, onlineUsers, io);
   });
 
+  socket.on("logout", (email) => {
+    onlineUsers = onlineUsers.filter((user) => user.email !== email);
+    io.emit("getOnlineUsers", onlineUsers);
+    console.log(`User ${email} logged out`);
+  });
+
   socket.on("disconnect", () => {
     onlineUsers = onlineUsers.filter((user) => user.socketId !== socket.id);
     io.emit("getOnlineUsers", onlineUsers);

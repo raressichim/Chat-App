@@ -108,9 +108,27 @@ const loginUser = async (req, res) => {
       httpOnly: true, // Prevent access via JavaScript
       maxAge: 3600000, // 1 hour in milliseconds
     });
-    res.status(200).send("Authorized");
+    res.status(200).send({ username: userData.username });
   } else {
     res.status(401).send("Unauthorized");
+  }
+};
+
+const logoutUser = async (req, res) => {
+  try {
+    const token = req.cookies["sessionToken"];
+    if (!token) {
+      return res.status(400).json({ message: "No token found in cookies" });
+    }
+
+    res.clearCookie("sessionToken", {
+      httpOnly: true,
+      sameSite: "strict", // Prevent CSRF attacks
+    });
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error("Error during logout", error);
+    res.status(500).json({ message: "Error during logout" });
   }
 };
 
@@ -159,4 +177,5 @@ module.exports = {
   checkEmailNotInUse,
   checkUsernameNotInUse,
   getOthers,
+  logoutUser,
 };

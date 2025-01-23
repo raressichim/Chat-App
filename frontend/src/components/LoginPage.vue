@@ -156,10 +156,12 @@ export default {
         const response = await loginUser(this.email, this.password);
         if (response) {
           this.errorMessage = "";
-          console.log(this.email);
+          this.username = response.username;
+          console.log("The user " + this.username + " just logged in");
+          this.$store.dispatch("updateSharedData", this.email);
           this.$router.replace({
             name: "dashboard",
-            params: { email: this.email },
+            params: { username: this.username },
           });
         }
       } catch (err) {

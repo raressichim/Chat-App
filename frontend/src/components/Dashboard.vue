@@ -1,50 +1,66 @@
 <template>
   <div class="chat-room">
-    <section class="other-users-container">
-      <h3>Other Users</h3>
-      <ul class="user-list">
-        <li v-for="user in otherUsers" :key="user.id" class="user-item">
-          <button @click="selectUser(user.email)">({{ user.email }})</button>
-        </li>
-      </ul>
-    </section>
-    <section class="messages-container" ref="messagesContainer">
-      <ul class="messages-list">
-        <li
-          v-for="message in messages"
-          :key="message.id"
-          :class="{
-            'my-message': message.sender === userEmail,
-            'other-message': message.sender !== userEmail,
-          }"
-          class="message"
-        >
-          <div class="message-wrap">
-            <div class="message-wrap-content">
-              <p>{{ message.text }}</p>
-              <small class="time">
-                {{
-                  message.createdAt && message.createdAt._seconds
-                    ? new Date(
-                        message.createdAt._seconds * 1000
-                      ).toLocaleTimeString()
-                    : "No Date Available"
-                }}
-              </small>
-            </div>
-          </div>
-        </li>
-      </ul>
-    </section>
-    <form class="message-form" @submit.prevent="sendMessage">
+    <!-- Logout Sidebar -->
+    <aside class="logout-sidebar">
+      <IconLogout class="logout-icon" @click="logout"></IconLogout>
+    </aside>
+    <!-- Sidebar with user list -->
+    <aside class="other-users-container">
       <input
-        v-model="newMessage"
+        v-model="searchQuery"
         type="text"
-        placeholder="Type your message here..."
-        class="message-input"
+        placeholder="Search ..."
+        class="user-search"
+        @input="filterUsers"
       />
-      <button type="submit" class="send-button">Send</button>
-    </form>
+      <h3>Chats</h3>
+      <ul class="user-list">
+        <li v-for="user in filteredOtherUsers" :key="user.id" class="user-item">
+          <button @click="selectUser(user.email)">{{ user.username }}</button>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Chat messages section -->
+    <section class="chat-section">
+      <div class="messages-container" ref="messagesContainer">
+        <ul class="messages-list">
+          <li
+            v-for="message in messages"
+            :key="message.id"
+            :class="{
+              'my-message': message.sender === userEmail,
+              'other-message': message.sender !== userEmail,
+            }"
+            class="message"
+          >
+            <div class="message-wrap">
+              <div class="message-wrap-content">
+                <p>{{ message.text }}</p>
+                <small class="time">
+                  {{
+                    message.createdAt && message.createdAt._seconds
+                      ? new Date(
+                          message.createdAt._seconds * 1000
+                        ).toLocaleTimeString()
+                      : "No Date Available"
+                  }}
+                </small>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <form class="message-form" @submit.prevent="sendMessage">
+        <input
+          v-model="newMessage"
+          type="text"
+          placeholder="Type your message here..."
+          class="message-input"
+        />
+        <button type="submit" class="send-button">Send</button>
+      </form>
+    </section>
   </div>
 </template>
 
@@ -52,9 +68,13 @@
 import socketService from "../services/socketService";
 import axios from "@/plugins/axios";
 import { nextTick } from "vue";
+import { IconLogout } from "@tabler/icons-vue";
 
 export default {
   name: "MessagesDashboard",
+  components: {
+    IconLogout,
+  },
   data() {
     return {
       email: "",
@@ -63,11 +83,29 @@ export default {
       currentChat: "",
       messages: [],
       newMessage: "",
+      searchQuery: "",
     };
   },
   computed: {
     userEmail() {
-      return this.$route.params.email;
+      console.log(this.$store.getters.getSharedData);
+      return this.$store.getters.getSharedData;
+    },
+    filteredOtherUsers() {
+      if (this.searchQuery.trim() === "") {
+        return this.otherUsers;
+      } else {
+        return this.otherUsers.filter(
+          (user) =>
+            user.username
+              .toLowerCase()
+              .includes(this.searchQuery.toLowerCase()) ||
+            user.firstName
+              .toLowerCase()
+              .includes(this.searchQuery.toLowerCase()) ||
+            user.lastName.toLowerCase().includes(this.searchQuery.toLowerCase())
+        );
+      }
     },
   },
   mounted() {
@@ -172,41 +210,116 @@ export default {
         console.error(err);
       }
     },
+    async logout() {
+      try {
+        await axios.post("/logout");
+        socketService.socket.emit("logout", this.userEmail);
+        this.$store.dispatch("updateSharedData", "");
+        this.$router.push("/");
+      } catch (error) {
+        console.error(
+          "Error during logout:",
+          error.response?.data || error.message
+        );
+      }
+    },
   },
 };
 </script>
 <style scoped>
-.chat-room {
+.logout-sidebar {
+  width: 1%;
+  background-color: #f8f9fa;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 51px);
-  margin: auto;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 20px;
+  border-right: 1px solid #ddd;
+  height: 100vh;
+  position: relative;
+}
+
+.logout-icon {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  color: black;
+  transition: color 0.3s ease;
+}
+
+.logout-icon:hover {
+  color: #c82333;
+}
+.chat-room {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
   overflow: hidden;
 }
+
+.other-users-container {
+  width: 25%;
+  padding: 20px;
+  background: #f5f7fb;
+  border-right: 1px solid #ccc;
+  overflow-y: auto;
+}
+
+.user-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.user-item {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+.user-item:last-child {
+  border-bottom: none;
+}
+
+.chat-section {
+  width: 75%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .messages-container {
   flex-grow: 1;
   padding: 20px;
   overflow-y: auto;
+  background: #ffffff;
+  scroll-behavior: smooth;
 }
+
 .messages-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
+
 .message {
   margin-bottom: 24px;
   position: relative;
   clear: both;
 }
+
 .message.my-message {
   float: right;
   text-align: right;
 }
+
 .message-wrap {
   display: flex;
   margin-bottom: 10px;
   line-height: 1.4;
 }
+
 .message-wrap-content {
   animation: flyIn 0.6s ease-in-out;
   background-color: #7269ef;
@@ -215,6 +328,7 @@ export default {
   padding: 12px 20px;
   position: relative;
 }
+
 .message-wrap-content:before {
   border-bottom: 5px solid transparent;
   border-left: 5px solid #7269ef;
@@ -226,16 +340,14 @@ export default {
   position: absolute;
   right: auto;
 }
+
 .time {
   color: hsla(0, 0%, 100%, 0.5);
   font-size: 12px;
   margin-top: 4px;
   text-align: right;
 }
-.conversation-name {
-  font-size: 14px;
-  font-weight: 500;
-}
+
 .my-message .message-wrap-content {
   background-color: #f5f7fb;
   border-radius: 8px 8px 0 8px;
@@ -243,6 +355,7 @@ export default {
   order: 2;
   text-align: right;
 }
+
 .my-message .message-wrap-content:before {
   border-bottom: 5px solid transparent;
   border-left: 5px solid transparent;
@@ -251,6 +364,7 @@ export default {
   left: auto;
   right: 0;
 }
+
 .my-message .time {
   color: #7a7f9a;
   text-align: left;
@@ -262,6 +376,7 @@ export default {
   background: #eceff1;
   border-top: 1px solid #ccc;
 }
+
 .message-input {
   flex-grow: 1;
   padding: 10px;
@@ -269,6 +384,7 @@ export default {
   border-radius: 4px;
   margin-right: 10px;
 }
+
 .send-button {
   padding: 10px 20px;
   background: #28a745;
@@ -278,30 +394,17 @@ export default {
   cursor: pointer;
   font-size: 16px;
 }
+
 .send-button:hover {
   background: #218838;
 }
-.other-users-container {
-  padding: 20px;
-  background: #f5f7fb;
-  border-bottom: 1px solid #ccc;
-}
-.user-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.user-item {
+
+.user-search {
+  width: 100%;
   padding: 10px;
-  border-bottom: 1px solid #ddd;
-}
-.user-item:last-child {
-  border-bottom: none;
-}
-.messages-container {
-  flex-grow: 1;
-  padding: 20px;
-  overflow-y: auto;
-  scroll-behavior: smooth;
+  margin-bottom: 10px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
 }
 </style>

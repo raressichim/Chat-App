@@ -17,5 +17,6 @@ router.post(
 );
 router.post("/login", loginValidationRules(), validate, userService.loginUser);
 router.get("/users/others", verifyToken, userService.getOthers);
+router.post("/logout", verifyToken, userService.logoutUser);
 
 module.exports = router;
