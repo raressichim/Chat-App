@@ -13,6 +13,7 @@
         class="user-search"
         @input="filterUsers"
       />
+      <button class="create-group-btn" @click="showGroupForm = true">+</button>
       <h3>Chats</h3>
       <ul class="user-list">
         <li v-for="user in filteredOtherUsers" :key="user.id" class="user-item">
@@ -20,6 +21,37 @@
         </li>
       </ul>
     </aside>
+    <transition name="fade">
+      <div v-if="showGroupForm" class="modal-overlay">
+        <div class="modal-content">
+          <h3>Create Group</h3>
+          <input
+            v-model="groupName"
+            type="text"
+            placeholder="Enter Group Name"
+          />
+
+          <h4>Select Users:</h4>
+          <ul>
+            <li v-for="user in otherUsers" :key="user.id">
+              <label>
+                <input
+                  type="checkbox"
+                  v-model="selectedUsers"
+                  :value="user.email"
+                />
+                {{ user.username }}
+              </label>
+            </li>
+          </ul>
+
+          <div class="button-container">
+            <button @click="createGroup">Create</button>
+            <button @click="showGroupForm = false">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </transition>
 
     <!-- Chat messages section -->
     <section class="chat-section">
@@ -84,6 +116,9 @@ export default {
       messages: [],
       newMessage: "",
       searchQuery: "",
+      showGroupForm: false,
+      selectedUsers: [],
+      groupName: "",
     };
   },
   computed: {
@@ -109,7 +144,8 @@ export default {
     },
   },
   mounted() {
-    this.fetchOtherUsers(this.userEmail);
+    //this.fetchOtherUsers(this.userEmail);
+    this.fetchUserChats(this.userEmail);
     socketService.connect(this.userEmail);
     this.messages = [];
 
@@ -129,9 +165,33 @@ export default {
           params: { email: email },
         });
         this.otherUsers = response.data;
+        console.log(this.otherUsers);
       } catch (err) {
         console.error("Error fetching other users:", err);
         this.otherUsers = [];
+      }
+    },
+    async fetchUserChats(email) {
+      try {
+        const response = await axios.get(`/users/chats`, {
+          params: { email: email },
+        });
+        const chats = response.data.chats;
+
+        this.chats = chats.map((chat) => {
+          const isGroup = chat.name && chat.name.trim() !== "";
+          const otherUser = chat.users.find((user) => user !== this.userEmail);
+
+          return {
+            id: chat.id,
+            name: isGroup ? chat.name : otherUser,
+            isGroup,
+          };
+        });
+
+        console.log("Chats fetched:", this.chats);
+      } catch (err) {
+        console.error("Error fetching chats:", err);
       }
     },
     async selectUser(email) {
@@ -139,8 +199,8 @@ export default {
       console.log(this.selectedUserEmail);
       try {
         const response = await axios.post("/chats", {
-          sender: this.userEmail,
-          recipient: email,
+          users: [this.userEmail, email],
+          name: "name",
         });
         this.currentChat = response.data.chatId;
         console.log("Current chat id: " + this.currentChat);
@@ -184,11 +244,6 @@ export default {
         },
       };
       console.log(message);
-      this.messages.push(message);
-      nextTick(() => {
-        const messagesContainer = this.$refs.messagesContainer;
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      });
       this.newMessage = "";
       try {
         const response = await axios.post("/chats/messages", {
@@ -210,6 +265,32 @@ export default {
         console.error(err);
       }
     },
+    async createGroup() {
+      if (!this.groupName.trim() || this.selectedUsers.length < 2) {
+        alert("Enter a valid group name and select at least two users.");
+        return;
+      }
+
+      try {
+        const response = await axios.post("/chats", {
+          users: [this.userEmail, ...this.selectedUsers],
+          name: this.groupName,
+        });
+        this.currentChat = response.data.chatId;
+
+        if (response.data.success) {
+          alert("Group created successfully!");
+          this.showGroupForm = false;
+          this.groupName = "";
+          this.selectedUsers = [];
+          this.fetchOtherUsers(this.userEmail);
+        }
+        this.fetchOtherUsers();
+      } catch (error) {
+        console.error("Error creating group:", error);
+      }
+    },
+
     async logout() {
       try {
         await axios.post("/logout");
@@ -406,5 +487,110 @@ export default {
   border: 2px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
+}
+
+/* Modal Overlay (Shaded Background) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent dark background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Make sure it appears on top */
+}
+
+/* Modal Content */
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 350px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* Title */
+.modal-content h3 {
+  font-size: 22px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+/* Input Field */
+.modal-content input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  outline: none;
+}
+
+.modal-content input[type="text"]:focus {
+  border-color: #007bff;
+}
+
+/* User List */
+.modal-content ul {
+  list-style: none;
+  padding: 0;
+  width: 100%;
+}
+
+.modal-content ul li {
+  text-align: left;
+  padding: 5px;
+}
+
+.modal-content label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Buttons */
+.button-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding-top: 15px;
+}
+
+.button-container button {
+  width: 45%;
+  padding: 12px;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.button-container button:first-of-type {
+  background: #007bff;
+  color: white;
+}
+
+.button-container button:first-of-type:hover {
+  background: #0056b3;
+}
+
+.button-container button:last-of-type {
+  background: #dc3545;
+  color: white;
+}
+
+.button-container button:last-of-type:hover {
+  background: #c82333;
 }
 </style>

@@ -4,7 +4,7 @@ const chatService = require("../service/chatService");
 const { verifyToken } = require("../middleware/verifyToken");
 
 router.post("/chats", verifyToken, chatService.createChat);
-router.get("/users/:userId/chats", verifyToken, chatService.getUserChats);
+router.get("/users/chats", verifyToken, chatService.getUserChats);
 router.post("/chats/messages", verifyToken, chatService.storeMessage);
 router.get("/chats/messages", verifyToken, chatService.getConversation);
 

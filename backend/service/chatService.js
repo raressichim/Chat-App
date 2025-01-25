@@ -1,19 +1,27 @@
 const db = require("../db_config/dbInit");
 
 const createChat = async (req, res) => {
-  const { sender, recipient } = req.body;
+  const { users, name } = req.body;
   try {
-    const foundChat = await findChat(sender, recipient);
-    if (foundChat) {
-      console.log("Chat already exists");
-      return res.status(200).json({
-        chatId: foundChat,
+    if (!users || users.length < 2) {
+      return res.status(400).json({
+        error: "At least two users are required for creating a chat.",
       });
+    }
+    if (users.length === 2) {
+      const foundChat = await findChat(users[0], users[1]);
+      if (foundChat) {
+        console.log("Chat already exists");
+        return res.status(200).json({
+          chatId: foundChat,
+        });
+      }
     }
 
     const newChat = {
-      firstEmail: sender,
-      secondEmail: recipient,
+      users,
+      name: users.length > 2 ? name : null,
+      isGroup: users.length > 2,
       createdAt: new Date(),
     };
 
@@ -36,44 +44,35 @@ const createChat = async (req, res) => {
 
 const findChat = async (firstEmail, secondEmail) => {
   const chatRef = db.collection("chats");
-  const query1 = chatRef
-    .where("firstEmail", "==", firstEmail)
-    .where("secondEmail", "==", secondEmail);
+  const query = chatRef
+    .where("isGroup", "==", false)
+    .where("users", "array-contains", firstEmail);
+  const snapshot = await query.get();
 
-  const query2 = chatRef
-    .where("firstEmail", "==", secondEmail)
-    .where("secondEmail", "==", firstEmail);
+  for (const doc of snapshot.docs) {
+    const chatData = doc.data();
 
-  const [snapshot1, snapshot2] = await Promise.all([
-    query1.get(),
-    query2.get(),
-  ]);
-
-  if (!snapshot1.empty || !snapshot2.empty) {
-    const existingChatSnapshot = !snapshot1.empty
-      ? snapshot1.docs[0]
-      : snapshot2.docs[0];
-    const existingChatId = existingChatSnapshot.id;
-
-    return existingChatId;
+    if (chatData.users.includes(secondEmail)) {
+      return doc.id;
+    }
   }
   return null;
 };
 
 const getUserChats = async (req, res) => {
-  const { userEmail } = req.params;
+  const userEmail = req.query.email;
+  if (!userEmail) {
+    return res
+      .status(400)
+      .send({ message: "There is no email for getting other users" });
+  }
   try {
     const chatRef = db.collection("chats");
-    const query1 = chatRef.where("firstEmail", "==", userEmail).get();
-    const query2 = chatRef.where("secondEmail", "==", userEmail).get();
+    const query = chatRef.where("users", "array-contains", userEmail);
 
-    const [snapshot1, snapshot2] = await Promise.all([query1, query2]);
+    const snapshot = await query.get();
 
-    const chats = [
-      ...snapshot1.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-      ...snapshot2.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-    ];
-
+    const chats = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     res.status(200).json({ chats });
   } catch (err) {
     console.log(err);
@@ -83,14 +82,22 @@ const getUserChats = async (req, res) => {
 
 const sendMessage = async (data, onlineUsers, io) => {
   const message = data.message;
+  const chatDocRef = db.collection("chats").doc(message.chatId);
+  const chatDoc = await chatDocRef.get();
 
-  const recipient = onlineUsers.find(
-    (user) => user.email === message.recipient
-  );
-
-  if (recipient) {
-    io.to(recipient.socketId).emit("getMessage", message);
+  if (!chatDoc.exists) {
+    console.error("Chat document does not exist.");
+    return;
   }
+
+  const chatData = chatDoc.data();
+
+  chatData.users.forEach((userEmail) => {
+    const recipient = onlineUsers.find((user) => user.email === userEmail);
+    if (recipient) {
+      io.to(recipient.socketId).emit("getMessage", message);
+    }
+  });
 };
 
 const storeMessage = async (req, res) => {
@@ -102,9 +109,9 @@ const storeMessage = async (req, res) => {
     if (!chatDoc.exists) {
       console.error("Chat document does not exist. Creating it now.");
       await chatDocRef.set({
-        firstEmail: message.recipient,
-        secondEmail: message.sender,
+        users: message.users,
         createdAt: new Date(),
+        isGroup: message.users > 2,
       });
     }
 
