@@ -12,17 +12,17 @@ const getAllUsers = (req, res) => {
 };
 
 const getOthers = async (req, res) => {
-  const email = req.query.email;
+  const username = req.query.username;
   console.log(req.query);
-  if (!email) {
+  if (!username) {
     return res
       .status(400)
-      .send({ message: "There is no email for getting other users" });
+      .send({ message: "There is no username for getting other users" });
   }
   try {
     const querySnapshot = await db
       .collection("users")
-      .where("email", "!=", email)
+      .where("username", "!=", username)
       .get();
     users = [];
     querySnapshot.forEach((doc) => {
@@ -47,7 +47,7 @@ const registerUser = async (req, res) => {
   console.log(req.body);
   const { firstName, lastName, username, email, password } = req.body;
 
-  if (!firstName || !lastName || !email) {
+  if (!firstName || !lastName || !email || !username || !password) {
     return res.status(400).send({ message: "All fields are required" });
   }
 
@@ -100,7 +100,7 @@ const loginUser = async (req, res) => {
   const isPasswordValid = await verifyPassword(password, userData.password);
 
   if (isPasswordValid) {
-    const token = jwt.sign({ email: email }, jwtSecret, {
+    const token = jwt.sign({ username: userData.username }, jwtSecret, {
       expiresIn: jwtExpireTime,
     });
 

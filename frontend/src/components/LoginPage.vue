@@ -158,7 +158,7 @@ export default {
           this.errorMessage = "";
           this.username = response.username;
           console.log("The user " + this.username + " just logged in");
-          this.$store.dispatch("updateSharedData", this.email);
+          this.$store.dispatch("updateSharedData", this.username);
           this.$router.replace({
             name: "dashboard",
             params: { username: this.username },
@@ -181,6 +181,7 @@ export default {
 
         try {
           await createUser(userData);
+          console.log("User created " + userData.username);
           this.isRegister = false;
           this.errorMessage = "";
           this.$refs.form.reset();

@@ -42,17 +42,17 @@ const createChat = async (req, res) => {
   }
 };
 
-const findChat = async (firstEmail, secondEmail) => {
+const findChat = async (firstUsername, secondUsername) => {
   const chatRef = db.collection("chats");
   const query = chatRef
     .where("isGroup", "==", false)
-    .where("users", "array-contains", firstEmail);
+    .where("users", "array-contains", firstUsername);
   const snapshot = await query.get();
 
   for (const doc of snapshot.docs) {
     const chatData = doc.data();
 
-    if (chatData.users.includes(secondEmail)) {
+    if (chatData.users.includes(secondUsername)) {
       return doc.id;
     }
   }
@@ -60,15 +60,15 @@ const findChat = async (firstEmail, secondEmail) => {
 };
 
 const getUserChats = async (req, res) => {
-  const userEmail = req.query.email;
-  if (!userEmail) {
+  const username = req.query.username;
+  if (!username) {
     return res
       .status(400)
-      .send({ message: "There is no email for getting other users" });
+      .send({ message: "There is no username for getting other users" });
   }
   try {
     const chatRef = db.collection("chats");
-    const query = chatRef.where("users", "array-contains", userEmail);
+    const query = chatRef.where("users", "array-contains", username);
 
     const snapshot = await query.get();
 
@@ -92,8 +92,8 @@ const sendMessage = async (data, onlineUsers, io) => {
 
   const chatData = chatDoc.data();
 
-  chatData.users.forEach((userEmail) => {
-    const recipient = onlineUsers.find((user) => user.email === userEmail);
+  chatData.users.forEach((username) => {
+    const recipient = onlineUsers.find((user) => user.username === username);
     if (recipient) {
       io.to(recipient.socketId).emit("getMessage", message);
     }
@@ -130,9 +130,8 @@ const storeMessage = async (req, res) => {
 };
 
 const getConversation = async (req, res) => {
-  const { firstEmail, secondEmail } = req.query;
+  const { chatId } = req.query;
   try {
-    chatId = await findChat(firstEmail, secondEmail);
     if (chatId) {
       const messagesRef = db
         .collection("chats")

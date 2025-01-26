@@ -15,9 +15,31 @@
       />
       <button class="create-group-btn" @click="showGroupForm = true">+</button>
       <h3>Chats</h3>
+      <ul class="chats-list">
+        <li
+          v-for="chat in chats"
+          :key="chat.id"
+          :class="['chats-item', { 'selected-item': currentChat === chat.id }]"
+          @click="selectChat(chat)"
+        >
+          <button>
+            {{ chat.name }}
+          </button>
+        </li>
+      </ul>
+      <h3>Other Users</h3>
       <ul class="user-list">
-        <li v-for="user in filteredOtherUsers" :key="user.id" class="user-item">
-          <button @click="selectUser(user.email)">{{ user.username }}</button>
+        <li
+          v-for="user in filteredOtherUsers"
+          :key="user.id"
+          :class="[
+            'user-item',
+            { 'selected-item': selectedUsername === user.username },
+          ]"
+        >
+          <button @click="selectUser(user.username)">
+            {{ user.username }}
+          </button>
         </li>
       </ul>
     </aside>
@@ -33,14 +55,15 @@
 
           <h4>Select Users:</h4>
           <ul>
-            <li v-for="user in otherUsers" :key="user.id">
+            <!-- Filter to show only individual users -->
+            <li v-for="chat in nonGroupChats" :key="chat.name">
               <label>
                 <input
                   type="checkbox"
                   v-model="selectedUsers"
-                  :value="user.email"
+                  :value="chat.name"
                 />
-                {{ user.username }}
+                {{ chat.name }}
               </label>
             </li>
           </ul>
@@ -61,13 +84,16 @@
             v-for="message in messages"
             :key="message.id"
             :class="{
-              'my-message': message.sender === userEmail,
-              'other-message': message.sender !== userEmail,
+              'my-message': message.sender === username,
+              'other-message': message.sender !== username,
             }"
             class="message"
           >
             <div class="message-wrap">
               <div class="message-wrap-content">
+                <small v-if="message.sender !== username" class="sender-name">
+                  {{ message.senderUsername || "" }}
+                </small>
                 <p>{{ message.text }}</p>
                 <small class="time">
                   {{
@@ -109,9 +135,8 @@ export default {
   },
   data() {
     return {
-      email: "",
       otherUsers: [],
-      selectedUserEmail: "",
+      selectedUsername: "",
       currentChat: "",
       messages: [],
       newMessage: "",
@@ -119,16 +144,36 @@ export default {
       showGroupForm: false,
       selectedUsers: [],
       groupName: "",
+      chats: [],
     };
   },
   computed: {
-    userEmail() {
+    nonGroupChats() {
+      return this.chats.filter((chat) => !chat.isGroup);
+    },
+    username() {
       console.log(this.$store.getters.getSharedData);
       return this.$store.getters.getSharedData;
     },
     filteredOtherUsers() {
       if (this.searchQuery.trim() === "") {
-        return this.otherUsers;
+        const chatUsernames = this.chats
+          .filter((chat) => !chat.isGroup)
+          .map((chat) => chat.name);
+
+        return this.otherUsers.filter(
+          (user) =>
+            !chatUsernames.includes(user.username) &&
+            (user.username
+              .toLowerCase()
+              .includes(this.searchQuery.toLowerCase()) ||
+              user.firstName
+                .toLowerCase()
+                .includes(this.searchQuery.toLowerCase()) ||
+              user.lastName
+                .toLowerCase()
+                .includes(this.searchQuery.toLowerCase()))
+        );
       } else {
         return this.otherUsers.filter(
           (user) =>
@@ -144,25 +189,27 @@ export default {
     },
   },
   mounted() {
-    //this.fetchOtherUsers(this.userEmail);
-    this.fetchUserChats(this.userEmail);
-    socketService.connect(this.userEmail);
+    this.fetchOtherUsers(this.username);
+    this.fetchUserChats(this.username);
+    socketService.connect(this.username);
     this.messages = [];
 
     socketService.socket.on("getMessage", (message) => {
-      console.log("Message receiver: ", message);
       this.messages.push(message);
       nextTick(() => {
         const messagesContainer = this.$refs.messagesContainer;
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        if (messagesContainer) {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
       });
     });
   },
+
   methods: {
-    async fetchOtherUsers(email) {
+    async fetchOtherUsers(username) {
       try {
         const response = await axios.get("/users/others", {
-          params: { email: email },
+          params: { username: username },
         });
         this.otherUsers = response.data;
         console.log(this.otherUsers);
@@ -171,16 +218,16 @@ export default {
         this.otherUsers = [];
       }
     },
-    async fetchUserChats(email) {
+    async fetchUserChats(username) {
       try {
         const response = await axios.get(`/users/chats`, {
-          params: { email: email },
+          params: { username: username },
         });
         const chats = response.data.chats;
 
         this.chats = chats.map((chat) => {
           const isGroup = chat.name && chat.name.trim() !== "";
-          const otherUser = chat.users.find((user) => user !== this.userEmail);
+          const otherUser = chat.users.find((user) => user !== this.username);
 
           return {
             id: chat.id,
@@ -194,29 +241,48 @@ export default {
         console.error("Error fetching chats:", err);
       }
     },
-    async selectUser(email) {
-      this.selectedUserEmail = email;
-      console.log(this.selectedUserEmail);
+    async selectUser(username) {
+      this.selectedUsername = username;
       try {
         const response = await axios.post("/chats", {
-          users: [this.userEmail, email],
+          users: [this.username, username],
           name: "name",
         });
         this.currentChat = response.data.chatId;
         console.log("Current chat id: " + this.currentChat);
         const messagesResponse = await axios.get("/chats/messages", {
           params: {
-            firstEmail: this.userEmail,
-            secondEmail: this.selectedUserEmail,
+            chatId: this.currentChat,
           },
         });
         this.messages = messagesResponse.data.messages;
         console.log(
           "Conversation loaded between " +
-            this.userEmail +
+            this.username +
             " and " +
-            this.selectedUserEmail
+            this.selectedUsername
         );
+
+        nextTick(() => {
+          const messagesContainer = this.$refs.messagesContainer;
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    },
+    async selectChat(chat) {
+      try {
+        this.selectedUsername = chat.isGroup ? null : chat.name;
+        this.currentChat = chat.id;
+        const messagesResponse = await axios.get("/chats/messages", {
+          params: {
+            chatId: this.currentChat,
+          },
+        });
+
+        this.messages = messagesResponse.data.messages;
+        console.log("Conversation loaded for chat:", chat.id);
 
         nextTick(() => {
           const messagesContainer = this.$refs.messagesContainer;
@@ -228,14 +294,13 @@ export default {
     },
 
     async sendMessage() {
-      if (!this.selectedUserEmail || !this.newMessage.trim()) {
-        console.warn("Recipient or message is missing.");
+      if (!this.currentChat) {
+        console.warn("Please select a chat in orde to send a message");
         return;
       }
 
       const message = {
-        sender: this.userEmail,
-        recipient: this.selectedUserEmail,
+        sender: this.username,
         text: this.newMessage.trim(),
         chatId: this.currentChat,
         createdAt: {
@@ -243,6 +308,7 @@ export default {
           _nanoseconds: new Date().getMilliseconds() * 1000000, // Convert milliseconds to nanoseconds
         },
       };
+
       console.log(message);
       this.newMessage = "";
       try {
@@ -273,7 +339,7 @@ export default {
 
       try {
         const response = await axios.post("/chats", {
-          users: [this.userEmail, ...this.selectedUsers],
+          users: [this.username, ...this.selectedUsers],
           name: this.groupName,
         });
         this.currentChat = response.data.chatId;
@@ -283,9 +349,9 @@ export default {
           this.showGroupForm = false;
           this.groupName = "";
           this.selectedUsers = [];
-          this.fetchOtherUsers(this.userEmail);
+          this.fetchOtherUsers(this.username);
         }
-        this.fetchOtherUsers();
+        //this.fetchOtherUsers();
       } catch (error) {
         console.error("Error creating group:", error);
       }
@@ -294,7 +360,8 @@ export default {
     async logout() {
       try {
         await axios.post("/logout");
-        socketService.socket.emit("logout", this.userEmail);
+        socketService.socket.emit("logout", this.username);
+        socketService.disconnect();
         this.$store.dispatch("updateSharedData", "");
         this.$router.push("/");
       } catch (error) {
@@ -347,20 +414,18 @@ export default {
   overflow-y: auto;
 }
 
+.chats-list,
 .user-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
+.chats-item,
 .user-item {
   padding: 10px;
   border-bottom: 1px solid #ddd;
   text-align: left;
-}
-
-.user-item:last-child {
-  border-bottom: none;
 }
 
 .chat-section {
@@ -489,21 +554,19 @@ export default {
   font-size: 14px;
 }
 
-/* Modal Overlay (Shaded Background) */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.5); /* Semi-transparent dark background */
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Make sure it appears on top */
+  z-index: 1000;
 }
 
-/* Modal Content */
 .modal-content {
   background: white;
   padding: 20px;
@@ -517,7 +580,6 @@ export default {
   position: relative;
 }
 
-/* Title */
 .modal-content h3 {
   font-size: 22px;
   font-weight: bold;
@@ -525,7 +587,6 @@ export default {
   margin-bottom: 15px;
 }
 
-/* Input Field */
 .modal-content input[type="text"] {
   width: 100%;
   padding: 10px;
@@ -540,7 +601,6 @@ export default {
   border-color: #007bff;
 }
 
-/* User List */
 .modal-content ul {
   list-style: none;
   padding: 0;
@@ -558,7 +618,6 @@ export default {
   gap: 5px;
 }
 
-/* Buttons */
 .button-container {
   display: flex;
   justify-content: space-between;
@@ -592,5 +651,28 @@ export default {
 
 .button-container button:last-of-type:hover {
   background: #c82333;
+}
+
+.sender-name {
+  font-size: 12px;
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 2px;
+  display: block;
+}
+
+.my-message .sender-name {
+  display: none;
+}
+
+.selected-item {
+  background-color: #e2e3e5;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.selected-item button {
+  color: #343a40;
+  font-weight: bold;
 }
 </style>

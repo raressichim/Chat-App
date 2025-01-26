@@ -32,10 +32,10 @@ let onlineUsers = [];
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
-  socket.on("addNewUser", (email) => {
-    !onlineUsers.some((user) => user.email === email) &&
+  socket.on("addNewUser", (username) => {
+    !onlineUsers.some((user) => user.username === username) &&
       onlineUsers.push({
-        email,
+        username,
         socketId: socket.id,
       });
 
@@ -47,10 +47,10 @@ io.on("connection", (socket) => {
     await chatService.sendMessage(message, onlineUsers, io);
   });
 
-  socket.on("logout", (email) => {
-    onlineUsers = onlineUsers.filter((user) => user.email !== email);
+  socket.on("logout", (username) => {
+    onlineUsers = onlineUsers.filter((user) => user.username !== username);
     io.emit("getOnlineUsers", onlineUsers);
-    console.log(`User ${email} logged out`);
+    console.log(`User ${username} logged out`);
   });
 
   socket.on("disconnect", () => {
