@@ -27,6 +27,34 @@
           </button>
         </li>
       </ul>
+      <div class="chat-requests-container">
+        <h3>Chat Requests</h3>
+        <ul class="chat-requests-list">
+          <li
+            v-for="request in chatRequests"
+            :key="request.id"
+            class="chat-request-item"
+          >
+            <span class="chat-request-text">
+              @{{ request.sender }} send you a chat request.
+            </span>
+            <div class="chat-request-buttons">
+              <button
+                class="chat-request-accept"
+                @click="respondToChatRequest(request.id, 'accepted')"
+              >
+                Accept
+              </button>
+              <button
+                class="chat-request-reject"
+                @click="respondToChatRequest(request.id, 'rejected')"
+              >
+                Reject
+              </button>
+            </div>
+          </li>
+        </ul>
+      </div>
       <h3>Other Users</h3>
       <ul class="user-list">
         <li
@@ -145,6 +173,7 @@ export default {
       selectedUsers: [],
       groupName: "",
       chats: [],
+      chatRequests: [],
     };
   },
   computed: {
@@ -189,8 +218,9 @@ export default {
     },
   },
   mounted() {
-    this.fetchOtherUsers(this.username);
-    this.fetchUserChats(this.username);
+    this.fetchOtherUsers();
+    this.fetchUserChats();
+    this.fetchChatRequests();
     socketService.connect(this.username);
     this.messages = [];
 
@@ -206,10 +236,10 @@ export default {
   },
 
   methods: {
-    async fetchOtherUsers(username) {
+    async fetchOtherUsers() {
       try {
         const response = await axios.get("/users/others", {
-          params: { username: username },
+          params: { username: this.username },
         });
         this.otherUsers = response.data;
         console.log(this.otherUsers);
@@ -218,10 +248,10 @@ export default {
         this.otherUsers = [];
       }
     },
-    async fetchUserChats(username) {
+    async fetchUserChats() {
       try {
         const response = await axios.get(`/users/chats`, {
-          params: { username: username },
+          params: { username: this.username },
         });
         const chats = response.data.chats;
 
@@ -241,27 +271,44 @@ export default {
         console.error("Error fetching chats:", err);
       }
     },
+    async fetchChatRequests() {
+      try {
+        const response = await axios.get("/chats/requests", {
+          params: { username: this.username },
+        });
+        this.chatRequests = response.data;
+      } catch (err) {
+        console.error("Error fetching chat requests:", err);
+      }
+    },
     async selectUser(username) {
       this.selectedUsername = username;
       try {
-        const response = await axios.post("/chats", {
-          users: [this.username, username],
-          name: "name",
+        const responseRequest = await axios.post("/chats/requests", {
+          sender: this.username,
+          receiver: username,
         });
-        this.currentChat = response.data.chatId;
-        console.log("Current chat id: " + this.currentChat);
-        const messagesResponse = await axios.get("/chats/messages", {
-          params: {
-            chatId: this.currentChat,
-          },
-        });
-        this.messages = messagesResponse.data.messages;
-        console.log(
-          "Conversation loaded between " +
-            this.username +
-            " and " +
-            this.selectedUsername
-        );
+        console.log("Request response: " + responseRequest);
+        alert("Chat request sent!");
+
+        // const responseChat = await axios.post("/chats", {
+        //   users: [this.username, username],
+        //   name: "name",
+        // });
+        // this.currentChat = responseChat.data.chatId;
+        // console.log("Current chat id: " + this.currentChat);
+        // const messagesResponse = await axios.get("/chats/messages", {
+        //   params: {
+        //     chatId: this.currentChat,
+        //   },
+        // });
+        // this.messages = messagesResponse.data.messages;
+        // console.log(
+        //   "Conversation loaded between " +
+        //     this.username +
+        //     " and " +
+        //     this.selectedUsername
+        // );
 
         nextTick(() => {
           const messagesContainer = this.$refs.messagesContainer;
@@ -290,6 +337,22 @@ export default {
         });
       } catch (err) {
         console.error(err);
+      }
+    },
+    async respondToChatRequest(requestId, status) {
+      try {
+        await axios.patch(
+          "/chats/requests",
+          { status },
+          { params: { requestId } }
+        );
+        alert(`Chat request ${status}!`);
+
+        this.fetchChatRequests();
+        if (status === "accepted") this.fetchUserChats(this.username);
+      } catch (err) {
+        console.error(`Error updating chat request to ${status}:`, err);
+        alert("Failed to update chat request.");
       }
     },
 
@@ -674,5 +737,75 @@ export default {
 .selected-item button {
   color: #343a40;
   font-weight: bold;
+}
+
+.chat-requests-container {
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  margin: auto;
+}
+
+h3 {
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.chat-requests-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.chat-request-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.chat-request-text {
+  font-size: 1rem;
+  color: #555;
+}
+
+.chat-request-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.chat-request-accept,
+.chat-request-reject {
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.chat-request-accept {
+  background-color: #4caf50;
+  color: white;
+}
+
+.chat-request-accept:hover {
+  background-color: #45a049;
+}
+
+.chat-request-reject {
+  background-color: #f44336;
+  color: white;
+}
+
+.chat-request-reject:hover {
+  background-color: #e53935;
 }
 </style>
