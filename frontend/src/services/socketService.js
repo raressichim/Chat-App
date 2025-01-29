@@ -1,5 +1,4 @@
 import { io } from "socket.io-client";
-// import axios from "@/plugins/axios";
 
 const socketService = {
   socket: null,
@@ -20,24 +19,6 @@ const socketService = {
       console.log("Online users: " + this.onlineUsers);
     });
   },
-
-  // async fetchMessages(firstUsername, secondUsername) {
-  //   try {
-  //     const chatId = await axios.post("/chats", {
-  //       firstUser: firstUsername,
-  //       secondUser: secondUsername,
-  //     });
-  //     const response = await axios.get(`/chats/${chatId}/messages`);
-
-  //     return response.data;
-  //   } catch (error) {
-  //     console.error(
-  //       "Error fetching messages:",
-  //       error.response?.data || error.message
-  //     );
-  //     return [];
-  //   }
-  // },
 
   async sendMessage(message) {
     if (this.socket === null) {

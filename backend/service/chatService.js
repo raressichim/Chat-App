@@ -34,6 +34,7 @@ const createChat = async (req, res) => {
     console.log("New chat data: ", chatData);
 
     return res.status(201).json({
+      success: true,
       chatId: addedChat.id,
     });
   } catch (err) {
