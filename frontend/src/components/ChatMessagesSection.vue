@@ -14,7 +14,7 @@
           <div class="message-wrap">
             <div class="message-wrap-content">
               <small v-if="message.sender !== username" class="sender-name">
-                {{ message.senderUsername || "" }}
+                {{ message.sender || "" }}
               </small>
               <p>{{ message.text }}</p>
               <small class="time">
@@ -53,6 +53,20 @@ export default {
     return {
       newMessage: "",
     };
+  },
+  watch: {
+    messages: {
+      handler() {
+        this.$nextTick(() => {
+          const container = this.$refs.messagesContainer;
+          if (container) {
+            container.scrollTop = container.scrollHeight;
+          }
+        });
+      },
+      deep: true,
+      immediate: true,
+    },
   },
   methods: {
     sendMessage() {

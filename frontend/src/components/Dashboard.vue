@@ -25,6 +25,7 @@
       :currentChat="currentChat"
       :username="username"
       @send-message="sendMessage"
+      ref="messagesContainer"
     />
   </div>
 </template>
@@ -144,9 +145,12 @@ export default {
           },
         });
 
-        this.messages = messagesResponse.data.messages;
         console.log("Conversation loaded for chat:", chat.id);
+        this.messages = [];
 
+        // Wait for next tick, then set new messages
+        await nextTick();
+        this.messages = messagesResponse.data.messages;
         nextTick(() => {
           const messagesContainer = this.$refs.messagesContainer;
           if (messagesContainer) {
