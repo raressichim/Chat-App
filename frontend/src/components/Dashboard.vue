@@ -92,9 +92,7 @@ export default {
   methods: {
     async fetchOtherUsers() {
       try {
-        const response = await axios.get("/users/others", {
-          params: { username: this.username },
-        });
+        const response = await axios.get("/users/others");
         this.otherUsers = response.data;
         console.log(this.otherUsers);
       } catch (err) {
@@ -104,9 +102,7 @@ export default {
     },
     async fetchUserChats() {
       try {
-        const response = await axios.get(`/users/chats`, {
-          params: { username: this.username },
-        });
+        const response = await axios.get(`/users/chats`);
         const chats = response.data.chats;
 
         this.chats = chats.map((chat) => {
@@ -127,9 +123,7 @@ export default {
     },
     async fetchChatRequests() {
       try {
-        const response = await axios.get("/chats/requests", {
-          params: { username: this.username },
-        });
+        const response = await axios.get("/chats/requests");
         this.chatRequests = response.data;
       } catch (err) {
         console.error("Error fetching chat requests:", err);
@@ -148,7 +142,6 @@ export default {
         console.log("Conversation loaded for chat:", chat.id);
         this.messages = [];
 
-        // Wait for next tick, then set new messages
         await nextTick();
         this.messages = messagesResponse.data.messages;
         nextTick(() => {
@@ -165,7 +158,6 @@ export default {
       this.selectedUsername = username;
       try {
         const responseRequest = await axios.post("/chats/requests", {
-          sender: this.username,
           receiver: username,
         });
         console.log("Request response: " + responseRequest);
@@ -190,7 +182,7 @@ export default {
         alert(`Chat request ${status}!`);
 
         this.fetchChatRequests();
-        if (status === "accepted") this.fetchUserChats(this.username);
+        if (status === "accepted") this.fetchUserChats();
       } catch (err) {
         console.error(`Error updating chat request to ${status}:`, err);
         alert("Failed to update chat request.");
@@ -203,7 +195,6 @@ export default {
       }
 
       const message = {
-        sender: this.username,
         text: messageText.trim(),
         chatId: this.currentChat,
         createdAt: {

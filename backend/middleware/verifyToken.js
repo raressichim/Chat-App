@@ -11,8 +11,7 @@ const verifyToken = (req, res, next) => {
     if (err) {
       return res.status(401).send("Unauthorized: Invalid or expired token");
     }
-
-    req.user = decoded;
+    req.username = decoded.username;
   });
   next();
 };

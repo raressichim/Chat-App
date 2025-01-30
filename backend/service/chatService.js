@@ -61,7 +61,7 @@ const findChat = async (firstUsername, secondUsername) => {
 };
 
 const getUserChats = async (req, res) => {
-  const username = req.query.username;
+  const username = req.username;
   if (!username) {
     return res
       .status(400)
@@ -103,6 +103,7 @@ const sendMessage = async (data, onlineUsers, io) => {
 
 const storeMessage = async (req, res) => {
   const message = req.body.message;
+  message.sender = req.username;
   console.log(message);
   try {
     const chatDocRef = db.collection("chats").doc(message.chatId);
@@ -158,7 +159,8 @@ const getConversation = async (req, res) => {
 };
 
 const createRequest = async (req, res) => {
-  const { sender, receiver } = req.body;
+  const { receiver } = req.body;
+  const sender = req.username;
   const isSent = await checkRequestNotSent(sender, receiver);
   if (isSent) {
     return res.status(200).json({ message: "Request was already sent" });
@@ -183,9 +185,6 @@ const createRequest = async (req, res) => {
 const updateRequest = async (req, res) => {
   const { requestId } = req.query;
   const { status } = req.body;
-
-  console.log(requestId);
-  console.log(status);
 
   if (!requestId || !status) {
     return res
@@ -240,7 +239,7 @@ const updateRequest = async (req, res) => {
 };
 
 const getRequests = async (req, res) => {
-  const { username } = req.query;
+  const username = req.username;
   try {
     if (!username) {
       return res.status(404).json({

@@ -6,14 +6,18 @@
           <v-col cols="12" sm="8" md="6" lg="4">
             <v-card class="elevation-12">
               <v-toolbar dark color="primary">
-                <v-toolbar-title
+                <v-toolbar-title v-if="!sessionExists"
                   >{{
                     isRegister ? stateObj.register.name : stateObj.login.name
                   }}
                   form</v-toolbar-title
                 >
+                <v-toolbar-title v-else>
+                  You are already logged in on another tab</v-toolbar-title
+                >
               </v-toolbar>
-              <v-card-text>
+
+              <v-card-text v-if="!sessionExists">
                 <form
                   ref="form"
                   @submit.prevent="isRegister ? register() : login()"
@@ -138,6 +142,7 @@ export default {
       lastName: "",
       isRegister: false,
       errorMessage: "",
+      sessionExists: false,
       stateObj: {
         register: {
           name: "Register",
@@ -151,6 +156,26 @@ export default {
     };
   },
   methods: {
+    async checkSession() {
+      try {
+        const response = await axios.get("/session");
+        if (response.status != 200) {
+          this.sessionExists = true;
+          this.errorMessage = "You are already logged in in another tab.";
+          console.error(response.data.message);
+        } else {
+          this.sessionExists = false;
+        }
+      } catch (error) {
+        if (error.response && error.response.status === 401) {
+          this.sessionExists = true;
+          console.error("User already logged in");
+        } else {
+          console.error("Error checking session:", error);
+        }
+      }
+    },
+
     async login() {
       try {
         const response = await loginUser(this.email, this.password);
@@ -197,6 +222,9 @@ export default {
         this.errorMessage = "Passwords do not match";
       }
     },
+  },
+  mounted() {
+    this.checkSession();
   },
   computed: {
     toggleMessage() {

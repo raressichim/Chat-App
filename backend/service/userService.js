@@ -12,8 +12,7 @@ const getAllUsers = (req, res) => {
 };
 
 const getOthers = async (req, res) => {
-  const username = req.query.username;
-  console.log(req.query);
+  const username = req.username;
   if (!username) {
     return res
       .status(400)
@@ -79,7 +78,10 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
-
+  const token = req.cookies["sessionToken"];
+  if (token) {
+    return res.status(400).json({ message: "User is already logged in" });
+  }
   const userToAuthenticate = {
     email: email,
     password: password,

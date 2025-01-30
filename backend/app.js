@@ -31,20 +31,22 @@ let onlineUsers = [];
 
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
-
   socket.on("addNewUser", (username) => {
     !onlineUsers.some((user) => user.username === username) &&
       onlineUsers.push({
         username,
         socketId: socket.id,
       });
-
+    socket.username = username;
     io.emit("getOnlineUsers", onlineUsers);
   });
 
-  socket.on("sendMessage", async (message) => {
-    socket.broadcast.to(message.chatId).emit("receiveMessage", message);
-    await chatService.sendMessage(message, onlineUsers, io);
+  socket.on("sendMessage", async (messageData) => {
+    messageData.message.sender = socket.username;
+    socket.broadcast
+      .to(messageData.message.chatId)
+      .emit("receiveMessage", messageData);
+    await chatService.sendMessage(messageData, onlineUsers, io);
   });
 
   socket.on("logout", (username) => {
