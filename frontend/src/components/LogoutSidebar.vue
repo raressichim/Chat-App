@@ -33,13 +33,13 @@ export default {
 <style>
 .logout-sidebar {
   width: 1%;
-  background-color: #f8f9fa;
+  background-color: #1e1e1e;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
   padding: 20px;
-  border-right: 1px solid #ddd;
+  border-right: 1px solid rgba(0, 0, 0, 0.2);
   height: 100vh;
   position: relative;
 }
@@ -48,7 +48,7 @@ export default {
   width: 24px;
   height: 24px;
   cursor: pointer;
-  color: black;
+  color: #ccc;
   transition: color 0.3s ease;
 }
 

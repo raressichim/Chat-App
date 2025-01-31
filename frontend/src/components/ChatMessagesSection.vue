@@ -87,8 +87,25 @@ export default {
   flex-grow: 1;
   padding: 20px;
   overflow-y: auto;
-  background: #ffffff;
+  background: #1e1e1e;
   scroll-behavior: smooth;
+}
+
+.messages-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .messages-list {
@@ -116,7 +133,7 @@ export default {
 
 .message-wrap-content {
   animation: flyIn 0.6s ease-in-out;
-  background-color: #7269ef;
+  background-color: #007bff;
   border-radius: 8px 8px 8px 0;
   color: #fff;
   padding: 12px 20px;
@@ -125,9 +142,9 @@ export default {
 
 .message-wrap-content:before {
   border-bottom: 5px solid transparent;
-  border-left: 5px solid #7269ef;
+  border-left: 5px solid #007bff;
   border-right: 5px solid transparent;
-  border-top: 5px solid #7269ef;
+  border-top: 5px solid #007bff;
   bottom: -10px;
   content: "";
   left: 0;
@@ -143,7 +160,7 @@ export default {
 }
 
 .my-message .message-wrap-content {
-  background-color: #f5f7fb;
+  background-color: #ffffff;
   border-radius: 8px 8px 0 8px;
   color: #343a40;
   order: 2;
@@ -153,8 +170,8 @@ export default {
 .my-message .message-wrap-content:before {
   border-bottom: 5px solid transparent;
   border-left: 5px solid transparent;
-  border-right: 5px solid #f5f7fb;
-  border-top: 5px solid #f5f7fb;
+  border-right: 5px solid #ffff;
+  border-top: 5px solid #ffff;
   left: auto;
   right: 0;
 }
@@ -167,21 +184,23 @@ export default {
 .message-form {
   display: flex;
   padding: 20px;
-  background: #eceff1;
-  border-top: 1px solid #ccc;
+  background: #1e1e1e;
+  border-top: 1px solid #333;
 }
 
 .message-input {
   flex-grow: 1;
   padding: 10px;
-  border: 2px solid #ddd;
+  border: 2px solid #444;
   border-radius: 4px;
+  background: #2c2c2c;
+  color: white;
   margin-right: 10px;
 }
 
 .send-button {
   padding: 10px 20px;
-  background: #28a745;
+  background: #007bff;
   border: none;
   border-radius: 4px;
   color: white;
@@ -190,7 +209,7 @@ export default {
 }
 
 .send-button:hover {
-  background: #218838;
+  background: #214f88;
 }
 
 .sender-name {

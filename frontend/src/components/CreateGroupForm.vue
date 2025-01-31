@@ -5,7 +5,7 @@
         <h3>Create Group</h3>
         <input v-model="groupName" type="text" placeholder="Enter Group Name" />
 
-        <h4>Select Users:</h4>
+        <h4 class="select-text">Select Users:</h4>
         <ul>
           <li v-for="user in users" :key="user">
             <label>
@@ -68,7 +68,7 @@ export default {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -76,7 +76,7 @@ export default {
 }
 
 .modal-content {
-  background: white;
+  background: #282c34;
   padding: 20px;
   border-radius: 10px;
   width: 350px;
@@ -91,7 +91,7 @@ export default {
 .modal-content h3 {
   font-size: 22px;
   font-weight: bold;
-  color: #333;
+  color: #fff;
   margin-bottom: 15px;
 }
 
@@ -99,10 +99,16 @@ export default {
   width: 100%;
   padding: 10px;
   margin-bottom: 15px;
-  border: 2px solid #ccc;
+  border: 2px solid #555;
   border-radius: 5px;
   font-size: 14px;
   outline: none;
+  color: #fff;
+  background-color: #333;
+}
+
+.select-text {
+  color: white;
 }
 
 .modal-content input[type="text"]:focus {
@@ -118,13 +124,16 @@ export default {
 .modal-content ul li {
   text-align: left;
   padding: 5px;
+  color: #fff;
 }
 
 .modal-content label {
   display: flex;
   align-items: center;
   gap: 5px;
+  color: #fff;
 }
+
 .button-container {
   display: flex;
   justify-content: space-between;

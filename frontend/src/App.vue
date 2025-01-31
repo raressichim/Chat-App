@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="grey lighten-5">
+  <v-container fluid class="custom-container">
     <router-view />
   </v-container>
 </template>
@@ -11,5 +11,13 @@
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
+}
+
+.custom-container {
+  background-color: transparent !important;
+  padding: 0 !important;
+}
+html {
+  overflow-y: auto !important;
 }
 </style>

@@ -23,7 +23,7 @@
         </button>
       </li>
     </ul>
-    <div class="chat-requests-container">
+    <div class="chat-requests-container" v-if="chatRequests.length > 0">
       <h3>Chat Requests</h3>
       <ul class="chat-requests-list">
         <li
@@ -146,9 +146,27 @@ export default {
 .conversation-container {
   width: 25%;
   padding: 20px;
-  background: #f5f7fb;
-  border-right: 1px solid #ccc;
+  background: #282c34;
+  border-right: 1px solid #333;
   overflow-y: auto;
+  color: #fff;
+}
+
+.conversation-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.conversation-container::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.conversation-container::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+.conversation-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .chats-list,
@@ -161,7 +179,7 @@ export default {
 .chats-item,
 .user-item {
   padding: 10px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #444;
   text-align: left;
 }
 
@@ -173,66 +191,80 @@ export default {
 }
 
 .selected-item {
-  background-color: #e2e3e5;
+  background-color: #343a40;
   border-radius: 4px;
   transition: background-color 0.3s ease;
 }
 
 .selected-item button {
-  color: #343a40;
-  font-weight: bold;
-}
-
-.chat-requests-container {
-  font-family: Arial, sans-serif;
-  background-color: #f9f9f9;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  max-width: 500px;
-  margin: auto;
+  color: #fff;
 }
 
 h3 {
   font-size: 1.5rem;
-  color: #333;
+  color: #fff;
   margin-bottom: 15px;
+  margin-top: 15px;
+}
+
+.chat-requests-container {
+  font-family: Arial, sans-serif;
+  background-color: #2a2a2a;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  margin: 20px 0;
+}
+
+.chat-requests-container h3 {
+  font-size: 1.25rem;
+  color: #fff;
+  margin-bottom: 16px;
+  font-weight: 600;
 }
 
 .chat-requests-list {
   list-style-type: none;
   padding: 0;
+  margin: 0;
 }
 
 .chat-request-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #fff;
-  padding: 10px 15px;
-  margin-bottom: 10px;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: #343a40;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chat-request-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .chat-request-text {
-  font-size: 1rem;
-  color: #555;
+  font-size: 0.95rem;
+  color: #e1e1e1;
+  flex-grow: 1;
 }
 
 .chat-request-buttons {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .chat-request-accept,
 .chat-request-reject {
   border: none;
-  padding: 8px 12px;
-  border-radius: 5px;
+  padding: 8px 16px;
+  border-radius: 6px;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .chat-request-accept {
@@ -242,6 +274,7 @@ h3 {
 
 .chat-request-accept:hover {
   background-color: #45a049;
+  transform: scale(1.05);
 }
 
 .chat-request-reject {
@@ -251,14 +284,17 @@ h3 {
 
 .chat-request-reject:hover {
   background-color: #e53935;
+  transform: scale(1.05);
 }
 
 .user-search {
   width: 100%;
   padding: 10px;
   margin-bottom: 10px;
-  border: 2px solid #ddd;
+  border: 2px solid #444;
   border-radius: 4px;
   font-size: 14px;
+  color: #fff;
+  background-color: #2c2c2c;
 }
 </style>

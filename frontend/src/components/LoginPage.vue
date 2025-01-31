@@ -1,20 +1,20 @@
 <template>
-  <v-app>
-    <v-main>
+  <v-app dark>
+    <v-main class="dark-theme">
       <v-container fluid fill-height>
         <v-row align="center" justify="center" class="fill-height">
           <v-col cols="12" sm="8" md="6" lg="4">
-            <v-card class="elevation-12">
-              <v-toolbar dark color="primary">
-                <v-toolbar-title v-if="!sessionExists"
-                  >{{
+            <v-card class="elevation-12 dark-card">
+              <v-toolbar dark color="blue darken-3">
+                <v-toolbar-title v-if="!sessionExists">
+                  {{
                     isRegister ? stateObj.register.name : stateObj.login.name
                   }}
-                  form</v-toolbar-title
-                >
+                  form
+                </v-toolbar-title>
                 <v-toolbar-title v-else>
-                  You are already logged in on another tab</v-toolbar-title
-                >
+                  You are already logged in on another tab
+                </v-toolbar-title>
               </v-toolbar>
 
               <v-card-text v-if="!sessionExists">
@@ -29,6 +29,7 @@
                     label="First Name"
                     type="text"
                     placeholder="First Name"
+                    class="dark-input"
                     required
                   ></v-text-field>
 
@@ -39,6 +40,7 @@
                     label="Last Name"
                     type="text"
                     placeholder="Last Name"
+                    class="dark-input"
                     required
                   ></v-text-field>
 
@@ -48,7 +50,8 @@
                     name="Username"
                     label="Username"
                     type="text"
-                    placeholder="Username"
+                    placeholder="username"
+                    class="dark-input"
                     required
                   ></v-text-field>
 
@@ -57,7 +60,8 @@
                     name="email"
                     label="Email"
                     type="text"
-                    placeholder="Email"
+                    placeholder="email"
+                    class="dark-input"
                     required
                   ></v-text-field>
 
@@ -67,6 +71,7 @@
                     label="Password"
                     type="password"
                     placeholder="password"
+                    class="dark-input"
                     required
                   ></v-text-field>
 
@@ -77,14 +82,15 @@
                     label="Confirm Password"
                     type="password"
                     placeholder="confirm password"
+                    class="dark-input"
                     required
                   ></v-text-field>
 
                   <div class="red--text">{{ errorMessage }}</div>
                   <v-btn
                     type="submit"
-                    class="mt-4"
-                    color="primary"
+                    class="mt-4 dark-button"
+                    color="blue darken-2"
                     value="log in"
                   >
                     {{
@@ -92,7 +98,7 @@
                     }}
                   </v-btn>
                   <div
-                    class="toggle-link grey--text mt-4"
+                    class="toggle-link mt-4"
                     v-on:click="isRegister = !isRegister"
                   >
                     {{ toggleMessage }}
@@ -237,23 +243,86 @@ export default {
 </script>
 
 <style>
-.v-card {
-  padding: 16px;
-  border-radius: 12px;
+html,
+body,
+#app,
+.v-application {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
 }
 
-.v-container {
+.full-height {
   height: 100vh;
+}
+
+.dark-theme {
+  background: linear-gradient(to right, #121212, #1e1e1e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.dark-card {
+  background-color: #2c2c2c !important;
+  color: #ffffff;
+  padding: 16px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.dark-input .v-input__control {
+  background-color: #424242 !important;
+  color: #ffffff !important;
+  border-radius: 8px;
+}
+
+.dark-input input {
+  color: #ffffff !important;
+}
+
+.dark-input input:-webkit-autofill,
+.dark-input input:-webkit-autofill:hover,
+.dark-input input:-webkit-autofill:focus,
+.dark-input input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0px 1000px #424242 inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.dark-input .v-text-field__slot input:-webkit-autofill,
+.dark-input .v-text-field__slot input:-webkit-autofill:hover,
+.dark-input .v-text-field__slot input:-webkit-autofill:focus,
+.dark-input .v-text-field__slot input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0px 1000px #424242 inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.dark-button {
+  background-color: #1565c0 !important;
+  color: white !important;
 }
 
 .toggle-link {
   cursor: pointer;
   text-decoration: underline;
+  color: #90caf9;
 }
 
 .toggle-link:hover {
-  color: #1976d2;
+  color: #64b5f6;
 }
+
 .red--text {
   color: red;
 }
