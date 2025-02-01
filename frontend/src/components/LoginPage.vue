@@ -3,7 +3,7 @@
     <v-main class="dark-theme">
       <v-container fluid fill-height>
         <v-row align="center" justify="center" class="fill-height">
-          <v-col cols="12" sm="8" md="6" lg="4">
+          <v-col cols="12" sm="10" md="6" lg="4">
             <v-card class="elevation-12 dark-card">
               <v-toolbar dark color="blue darken-3">
                 <v-toolbar-title v-if="!sessionExists">
@@ -17,7 +17,7 @@
                 </v-toolbar-title>
               </v-toolbar>
 
-              <v-card-text v-if="!sessionExists">
+              <v-card-text v-if="!sessionExists" class="form-wrapper">
                 <form
                   ref="form"
                   @submit.prevent="isRegister ? register() : login()"
@@ -88,6 +88,7 @@
 
                   <div class="red--text">{{ errorMessage }}</div>
                   <v-btn
+                    block
                     type="submit"
                     class="mt-4 dark-button"
                     color="blue darken-2"
@@ -271,13 +272,19 @@ body,
   height: 100vh;
 }
 
+.form-wrapper {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
 .dark-card {
   background-color: #2c2c2c !important;
   color: #ffffff;
   padding: 16px;
   border-radius: 12px;
-  width: 100%;
-  max-width: 400px;
+  width: 90%;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 .dark-input .v-input__control {
