@@ -38,7 +38,10 @@ import LogoutSidebar from "./LogoutSidebar.vue";
 import ChatSidebar from "./ChatSidebar.vue";
 import CreateGroupForm from "./CreateGroupForm.vue";
 import ChatMessagesSection from "./ChatMessagesSection.vue";
-
+import { db } from "../database/firebase_config";
+import { onSnapshot, collection, query, where } from "firebase/firestore";
+import { useToast } from "vue-toastification";
+const toast = useToast();
 export default {
   name: "MessagesDashboard",
   components: {
@@ -77,6 +80,7 @@ export default {
     this.fetchChatRequests();
     socketService.connect(this.username);
     this.messages = [];
+    this.setupRequestsListener();
 
     socketService.socket.on("getMessage", (message) => {
       this.messages.push(message);
@@ -131,6 +135,51 @@ export default {
         console.error("Error fetching chat requests:", err);
       }
     },
+    setupRequestsListener() {
+      const chatRequestsQuery = query(
+        collection(db, "chatRequests"),
+        where("receiver", "==", this.username),
+        where("status", "==", "pending")
+      );
+
+      onSnapshot(chatRequestsQuery, (snapshot) => {
+        const requests = [];
+        snapshot.forEach((doc) => {
+          requests.push({ id: doc.id, ...doc.data() });
+        });
+        this.chatRequests = requests;
+      });
+
+      const chatsQuery = query(
+        collection(db, "chats"),
+        where("users", "array-contains", this.username)
+      );
+
+      onSnapshot(chatsQuery, (snapshot) => {
+        const chats = [];
+        snapshot.forEach((doc) => {
+          const chatData = doc.data();
+          const isGroup = chatData.name && chatData.name.trim() !== "";
+          const otherUser = chatData.users.find(
+            (user) => user !== this.username
+          );
+
+          chats.push({
+            id: doc.id,
+            name: isGroup ? chatData.name : otherUser,
+            ...(isGroup
+              ? {
+                  users: chatData.users.filter(
+                    (user) => user !== this.username
+                  ),
+                }
+              : {}),
+            isGroup,
+          });
+        });
+        this.chats = chats;
+      });
+    },
     async selectChat(chat) {
       try {
         this.selectedUsername = chat.isGroup ? null : chat.name;
@@ -163,7 +212,7 @@ export default {
           receiver: username,
         });
         console.log("Request response: " + responseRequest);
-        alert("Chat request sent!");
+        toast.success("Chat request sent!");
         nextTick(() => {
           const messagesContainer = this.$refs.messagesContainer;
           if (messagesContainer) {
@@ -181,13 +230,13 @@ export default {
           { status },
           { params: { requestId } }
         );
-        alert(`Chat request ${status}!`);
+        toast.info(`Chat request ${status}!`);
 
         this.fetchChatRequests();
         if (status === "accepted") this.fetchUserChats();
       } catch (err) {
         console.error(`Error updating chat request to ${status}:`, err);
-        alert("Failed to update chat request.");
+        toast.error("Failed to update chat request.");
       }
     },
     async sendMessage(messageText) {
@@ -236,7 +285,7 @@ export default {
         this.currentChat = response.data.chatId;
 
         if (response.data.success) {
-          alert("Group created successfully!");
+          toast.success("Group created successfully!");
           this.showGroupForm = false;
           this.groupName = "";
           this.selectedUsers = [];
@@ -244,7 +293,7 @@ export default {
         }
       } catch (error) {
         console.error("Error creating group:", error);
-        alert("Failed to create group.");
+        toast.error("Failed to create group.");
       }
     },
   },

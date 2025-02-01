@@ -1,7 +1,17 @@
 <template>
   <section class="chat-section">
     <div class="messages-container" ref="messagesContainer">
-      <ul class="messages-list">
+      <div v-if="!currentChat" class="no-chat-selected">
+        <div class="welcome-message">
+          <img
+            :src="require('@/assets/intro-icon.png')"
+            alt="Welcome!"
+            class="welcome-icon"
+          />
+          <p>Select a chat and start typing..</p>
+        </div>
+      </div>
+      <ul class="messages - list">
         <li
           v-for="message in messages"
           :key="message.id"
@@ -31,7 +41,7 @@
         </li>
       </ul>
     </div>
-    <form class="message-form" @submit.prevent="sendMessage">
+    <form v-if="currentChat" class="message-form" @submit.prevent="sendMessage">
       <input
         v-model="newMessage"
         type="text"
@@ -108,6 +118,30 @@ export default {
   background: #555;
 }
 
+.no-chat-selected {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80%;
+  color: white;
+  font-size: 20px;
+  text-align: center;
+  flex-direction: column;
+}
+
+.welcome-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.welcome-icon {
+  width: 150px;
+  height: 150px;
+  margin-bottom: 40px;
+}
+
 .messages-list {
   list-style: none;
   margin: 0;
@@ -118,11 +152,13 @@ export default {
   margin-bottom: 24px;
   position: relative;
   clear: both;
+  list-style: none;
 }
 
 .message.my-message {
   float: right;
   text-align: right;
+  list-style: none;
 }
 
 .message-wrap {

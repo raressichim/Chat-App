@@ -25,6 +25,8 @@
 </template>
 
 <script>
+import { useToast } from "vue-toastification";
+
 export default {
   props: {
     users: {
@@ -45,7 +47,9 @@ export default {
   methods: {
     createGroup() {
       if (!this.groupName.trim() || this.selectedUsers.length < 2) {
-        alert("Enter a valid group name and select at least two users.");
+        useToast().warning(
+          "Enter a valid group name and select at least two users."
+        );
         return;
       }
       this.$emit("create-group", {
