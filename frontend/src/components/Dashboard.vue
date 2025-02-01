@@ -104,7 +104,6 @@ export default {
       try {
         const response = await axios.get(`/users/chats`);
         const chats = response.data.chats;
-
         this.chats = chats.map((chat) => {
           const isGroup = chat.name && chat.name.trim() !== "";
           const otherUser = chat.users.find((user) => user !== this.username);
@@ -112,6 +111,9 @@ export default {
           return {
             id: chat.id,
             name: isGroup ? chat.name : otherUser,
+            ...(isGroup
+              ? { users: chat.users.filter((user) => user !== this.username) }
+              : {}),
             isGroup,
           };
         });

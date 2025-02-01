@@ -13,7 +13,7 @@
     <h3>Chats</h3>
     <ul class="chats-list">
       <li
-        v-for="chat in chats"
+        v-for="chat in filteredChats"
         :key="chat.id"
         :class="['chats-item', { 'selected-item': currentChat === chat.id }]"
         @click="selectChat(chat)"
@@ -90,39 +90,43 @@ export default {
     },
   },
   computed: {
-    filteredOtherUsers() {
+    filteredChats() {
       if (this.localSearchQuery.trim() === "") {
-        const chatUsernames = this.chats
-          .filter((chat) => !chat.isGroup)
-          .map((chat) => chat.name);
-
-        return this.otherUsers.filter(
-          (user) =>
-            !chatUsernames.includes(user.username) &&
-            (user.username
-              .toLowerCase()
-              .includes(this.localSearchQuery.toLowerCase()) ||
-              user.firstName
-                .toLowerCase()
-                .includes(this.localSearchQuery.toLowerCase()) ||
-              user.lastName
-                .toLowerCase()
-                .includes(this.localSearchQuery.toLowerCase()))
-        );
-      } else {
-        return this.otherUsers.filter(
-          (user) =>
-            user.username
-              .toLowerCase()
-              .includes(this.localSearchQuery.toLowerCase()) ||
-            user.firstName
-              .toLowerCase()
-              .includes(this.localSearchQuery.toLowerCase()) ||
-            user.lastName
-              .toLowerCase()
-              .includes(this.localSearchQuery.toLowerCase())
-        );
+        return this.chats;
       }
+
+      return this.chats.filter((chat) => {
+        const chatNameMatch = chat.name
+          .toLowerCase()
+          .includes(this.localSearchQuery.toLowerCase());
+
+        let usersMatch = false;
+        if (chat.isGroup && Array.isArray(chat.users)) {
+          usersMatch = chat.users.some((user) =>
+            user.toLowerCase().includes(this.localSearchQuery.toLowerCase())
+          );
+        }
+
+        return chatNameMatch || usersMatch;
+      });
+    },
+    filteredOtherUsers() {
+      const searchQuery = this.localSearchQuery.trim().toLowerCase();
+
+      const chatUsernames = new Set(
+        this.chats.filter((chat) => !chat.isGroup).map((chat) => chat.name)
+      );
+
+      return this.otherUsers.filter((user) => {
+        const matchesSearch =
+          user.username.toLowerCase().includes(searchQuery) ||
+          user.firstName.toLowerCase().includes(searchQuery) ||
+          user.lastName.toLowerCase().includes(searchQuery);
+
+        return searchQuery
+          ? matchesSearch
+          : !chatUsernames.has(user.username) && matchesSearch;
+      });
     },
   },
   methods: {
