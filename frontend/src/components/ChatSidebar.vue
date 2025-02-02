@@ -1,76 +1,59 @@
 <template>
-  <aside class="conversation-container">
-    <input
-      v-model="localSearchQuery"
-      type="text"
-      placeholder="Search ..."
-      class="user-search"
-      @input="updateSearchQuery"
-    />
-    <button class="create-group-btn" @click="$emit('show-group-form')">
-      +
+  <div class="sidebar-controls">
+    <button class="toggle-sidebar" @click="toggleSidebar">☰</button>
+
+    <button v-if="isSidebarVisible" class="logout-button" @click="handleLogout">
+      <IconLogout class="logout-icon" />
     </button>
-    <h3>Chats</h3>
-    <ul class="chats-list">
-      <li
-        v-for="chat in filteredChats"
-        :key="chat.id"
-        :class="['chats-item', { 'selected-item': currentChat === chat.id }]"
-        @click="selectChat(chat)"
-      >
-        <button>
-          {{ chat.name }}
-        </button>
-      </li>
-    </ul>
-    <div class="chat-requests-container" v-if="chatRequests.length > 0">
-      <h3>Chat Requests</h3>
-      <ul class="chat-requests-list">
-        <li
-          v-for="request in chatRequests"
-          :key="request.id"
-          class="chat-request-item"
-        >
-          <span class="chat-request-text">
-            @{{ request.sender }} sent you a chat request.
-          </span>
-          <div class="chat-request-buttons">
-            <button
-              class="chat-request-accept"
-              @click="respondToChatRequest(request.id, 'accepted')"
-            >
-              Accept
-            </button>
-            <button
-              class="chat-request-reject"
-              @click="respondToChatRequest(request.id, 'rejected')"
-            >
-              Reject
-            </button>
-          </div>
-        </li>
-      </ul>
-    </div>
-    <h3>Other Users</h3>
-    <ul class="user-list">
-      <li
-        v-for="user in filteredOtherUsers"
-        :key="user.id"
-        :class="[
-          'user-item',
-          { 'selected-item': selectedUsername === user.username },
-        ]"
-      >
-        <button @click="selectUser(user.username)">
-          {{ user.username }}
-        </button>
-      </li>
-    </ul>
+  </div>
+
+  <!-- Mobile Sidebar -->
+  <aside
+    v-if="isMobile"
+    :class="{
+      'sidebar-open': isSidebarVisible,
+      'sidebar-closed': !isSidebarVisible,
+    }"
+  >
+    <SidebarContent
+      :filteredChats="filteredChats"
+      :chatRequests="chatRequests"
+      :filteredOtherUsers="filteredOtherUsers"
+      :selectedUsername="selectedUsername"
+      @select-chat="selectChat"
+      @respond-to-chat-request="respondToChatRequest"
+      @select-user="selectUser"
+      @update-search-query="updateSearchQuery"
+      @show-group-form="$emit('show-group-form')"
+      :searchQuery="localSearchQuery"
+    />
+  </aside>
+
+  <!-- Desktop Sidebar -->
+  <aside class="conversation-container">
+    <SidebarContent
+      :filteredChats="filteredChats"
+      :chatRequests="chatRequests"
+      :filteredOtherUsers="filteredOtherUsers"
+      :selectedUsername="selectedUsername"
+      @select-chat="selectChat"
+      @respond-to-chat-request="respondToChatRequest"
+      @select-user="selectUser"
+      @update-search-query="updateSearchQuery"
+      @show-group-form="$emit('show-group-form')"
+      :searchQuery="localSearchQuery"
+    />
   </aside>
 </template>
 
 <script>
+import SidebarContent from "./SidebarContent.vue";
+import { IconLogout } from "@tabler/icons-vue";
 export default {
+  components: {
+    SidebarContent,
+    IconLogout,
+  },
   props: {
     searchQuery: String,
     chats: Array,
@@ -82,6 +65,8 @@ export default {
   data() {
     return {
       localSearchQuery: this.searchQuery,
+      isSidebarVisible: false,
+      isMobile: window.innerWidth < 768,
     };
   },
   watch: {
@@ -130,11 +115,13 @@ export default {
     },
   },
   methods: {
-    updateSearchQuery() {
-      this.$emit("update:searchQuery", this.localSearchQuery);
+    updateSearchQuery(newQuery) {
+      this.localSearchQuery = newQuery;
+      this.$emit("update:searchQuery", newQuery);
     },
     selectChat(chat) {
       this.$emit("select-chat", chat);
+      this.isSidebarVisible = false;
     },
     respondToChatRequest(requestId, status) {
       this.$emit("respond-request", requestId, status);
@@ -142,6 +129,24 @@ export default {
     selectUser(username) {
       this.$emit("select-user", username);
     },
+    toggleSidebar() {
+      this.isSidebarVisible = !this.isSidebarVisible;
+    },
+    checkMobile() {
+      this.isMobile = window.innerWidth < 768;
+      if (!this.isMobile) {
+        this.isSidebarVisible = false;
+      }
+    },
+    handleLogout() {
+      this.$emit("logout");
+    },
+  },
+  mounted() {
+    window.addEventListener("resize", this.checkMobile);
+  },
+  beforeUnmount() {
+    window.removeEventListener("resize", this.checkMobile);
   },
 };
 </script>
@@ -154,6 +159,11 @@ export default {
   border-right: 1px solid #333;
   overflow-y: auto;
   color: #fff;
+}
+
+.logout-button {
+  margin-left: 265px;
+  margin-top: 17px;
 }
 
 .conversation-container::-webkit-scrollbar {
@@ -173,132 +183,55 @@ export default {
   background: #555;
 }
 
-.chats-list,
-.user-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.chats-item,
-.user-item {
-  padding: 10px;
-  border-bottom: 1px solid #444;
-  text-align: left;
-}
-
-.chat-section {
-  width: 75%;
+.sidebar-controls {
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.selected-item {
-  background-color: #343a40;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
-}
-
-.selected-item button {
-  color: #fff;
-}
-
-h3 {
-  font-size: 1.5rem;
-  color: #fff;
-  margin-bottom: 15px;
-  margin-top: 15px;
-}
-
-.chat-requests-container {
-  font-family: Arial, sans-serif;
-  background-color: #2a2a2a;
-  padding: 16px;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  margin: 20px 0;
-}
-
-.chat-requests-container h3 {
-  font-size: 1.25rem;
-  color: #fff;
-  margin-bottom: 16px;
-  font-weight: 600;
-}
-
-.chat-requests-list {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-}
-
-.chat-request-item {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  background-color: #343a40;
-  padding: 12px 16px;
-  margin-bottom: 12px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
 }
 
-.chat-request-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-.chat-request-text {
-  font-size: 0.95rem;
-  color: #e1e1e1;
-  flex-grow: 1;
-}
-
-.chat-request-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.chat-request-accept,
-.chat-request-reject {
+.toggle-sidebar {
+  display: none;
+  background: transparent;
   border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 24px;
+  color: white;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-.chat-request-accept {
-  background-color: #4caf50;
-  color: white;
-}
+@media (max-width: 768px) {
+  .toggle-sidebar {
+    display: block;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 100;
+  }
 
-.chat-request-accept:hover {
-  background-color: #45a049;
-  transform: scale(1.05);
-}
+  aside {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 80%;
+    height: 100vh;
+    background: #222;
+    transition: left 0.3s ease-in-out;
+    z-index: 50;
+    overflow-y: auto;
+  }
 
-.chat-request-reject {
-  background-color: #f44336;
-  color: white;
-}
+  .sidebar-open {
+    left: 0;
+  }
 
-.chat-request-reject:hover {
-  background-color: #e53935;
-  transform: scale(1.05);
-}
+  .sidebar-closed {
+    left: -100%;
+  }
 
-.user-search {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 2px solid #444;
-  border-radius: 4px;
-  font-size: 14px;
-  color: #fff;
-  background-color: #2c2c2c;
+  .user-search {
+    margin-top: 60px;
+  }
 }
 </style>

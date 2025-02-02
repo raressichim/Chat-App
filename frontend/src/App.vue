@@ -16,8 +16,6 @@
 .custom-container {
   background-color: transparent !important;
   padding: 0 !important;
-}
-html {
-  overflow-y: auto !important;
+  margin: 0 !important;
 }
 </style>

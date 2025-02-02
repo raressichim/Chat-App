@@ -1,30 +1,17 @@
 <template>
   <aside class="logout-sidebar">
-    <IconLogout class="logout-icon" @click="logout"></IconLogout>
+    <IconLogout class="logout-icon" @click="handleLogout"></IconLogout>
   </aside>
 </template>
 
 <script>
 import { IconLogout } from "@tabler/icons-vue";
-import socketService from "../services/socketService";
-import axios from "@/plugins/axios";
 
 export default {
   components: { IconLogout },
   methods: {
-    async logout() {
-      try {
-        await axios.post("/logout");
-        socketService.socket.emit("logout", this.username);
-        socketService.disconnect();
-        this.$store.dispatch("updateSharedData", "");
-        this.$router.push("/");
-      } catch (error) {
-        console.error(
-          "Error during logout:",
-          error.response?.data || error.message
-        );
-      }
+    handleLogout() {
+      this.$emit("logout");
     },
   },
 };
@@ -32,13 +19,12 @@ export default {
 
 <style>
 .logout-sidebar {
-  width: 1%;
+  width: 40px;
   background-color: #1e1e1e;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
-  padding: 20px;
   border-right: 1px solid rgba(0, 0, 0, 0.2);
   height: 100vh;
   position: relative;
@@ -54,5 +40,12 @@ export default {
 
 .logout-icon:hover {
   color: #c82333;
+}
+@media (max-width: 768px) {
+  .logout-sidebar {
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+  }
 }
 </style>

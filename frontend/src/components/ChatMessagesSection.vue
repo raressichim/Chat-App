@@ -99,8 +99,15 @@ export default {
   overflow-y: auto;
   background: #1e1e1e;
   scroll-behavior: smooth;
+  height: 80vh;
 }
 
+.chat-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 .messages-container::-webkit-scrollbar {
   width: 8px;
 }
@@ -140,12 +147,6 @@ export default {
   width: 150px;
   height: 150px;
   margin-bottom: 40px;
-}
-
-.messages-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
 }
 
 .message {
@@ -258,5 +259,28 @@ export default {
 
 .my-message .sender-name {
   display: none;
+}
+
+@media (max-width: 768px) {
+  .messages-container {
+    height: 65vh;
+  }
+
+  .message-wrap-content {
+    max-width: 100%;
+  }
+
+  .message-form {
+    flex-direction: column;
+  }
+
+  .message-input {
+    width: 100%;
+  }
+
+  .send-button {
+    width: 100%;
+    margin-top: 5px;
+  }
 }
 </style>

@@ -12,6 +12,7 @@
       @select-chat="selectChat"
       @respond-request="respondToChatRequest"
       @select-user="selectUser"
+      @logout="logout"
     />
     <CreateGroupForm
       v-if="showGroupForm"
@@ -296,6 +297,20 @@ export default {
         toast.error("Failed to create group.");
       }
     },
+    async logout() {
+      try {
+        await axios.post("/logout");
+        socketService.socket.emit("logout", this.username);
+        socketService.disconnect();
+        this.$store.dispatch("updateSharedData", "");
+        this.$router.push("/");
+      } catch (error) {
+        console.error(
+          "Error during logout:",
+          error.response?.data || error.message
+        );
+      }
+    },
   },
 };
 </script>
@@ -304,6 +319,21 @@ export default {
   display: flex;
   flex-direction: row;
   height: 100vh;
+  width: 100%; /* Use 100% instead of 100vw */
   overflow: hidden;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* Prevent scrollbars */
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 </style>
