@@ -63,13 +63,20 @@
       >
         <button @click="selectUser(user.username)">
           {{ user.username }}
+          <CIcon :icon="cilSend" class="send-icon" />
         </button>
       </li>
     </ul>
   </div>
 </template>
 <script>
+import { CIcon } from "@coreui/icons-vue";
+import { cilSend } from "@coreui/icons";
+
 export default {
+  components: {
+    CIcon,
+  },
   props: {
     filteredChats: Array,
     chatRequests: Array,
@@ -80,6 +87,7 @@ export default {
   data() {
     return {
       localSearchQuery: this.searchQuery,
+      cilSend,
     };
   },
   watch: {
@@ -240,5 +248,18 @@ h3 {
 }
 .group-btn {
   color: white;
+}
+
+.send-icon {
+  margin-left: 8px;
+  width: 16px;
+  height: 16px;
+  color: #007bff;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.send-icon:hover {
+  color: #0051a7;
 }
 </style>

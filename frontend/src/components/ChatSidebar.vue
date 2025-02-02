@@ -108,9 +108,7 @@ export default {
           user.firstName.toLowerCase().includes(searchQuery) ||
           user.lastName.toLowerCase().includes(searchQuery);
 
-        return searchQuery
-          ? matchesSearch
-          : !chatUsernames.has(user.username) && matchesSearch;
+        return !chatUsernames.has(user.username) && matchesSearch;
       });
     },
   },

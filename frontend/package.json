@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
+    "@coreui/icons": "^3.0.1",
+    "@coreui/icons-vue": "^2.2.0",
     "@mdi/font": "5.9.55",
     "@tabler/icons-vue": "^3.29.0",
     "axios": "^1.7.9",
