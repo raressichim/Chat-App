@@ -29,22 +29,24 @@
           :key="request.id"
           class="chat-request-item"
         >
-          <span class="chat-request-text">
-            @{{ request.sender }} sent you a chat request.
-          </span>
-          <div class="chat-request-buttons">
-            <button
-              class="chat-request-accept"
-              @click="respondToChatRequest(request.id, 'accepted')"
-            >
-              Accept
-            </button>
-            <button
-              class="chat-request-reject"
-              @click="respondToChatRequest(request.id, 'rejected')"
-            >
-              Reject
-            </button>
+          <div class="request-content">
+            <span class="chat-request-text">
+              @{{ request.sender }} sent you a chat request.
+            </span>
+            <div class="chat-request-buttons">
+              <button
+                class="chat-request-accept"
+                @click="respondToChatRequest(request.id, 'accepted')"
+              >
+                Accept
+              </button>
+              <button
+                class="chat-request-reject"
+                @click="respondToChatRequest(request.id, 'rejected')"
+              >
+                Reject
+              </button>
+            </div>
           </div>
         </li>
       </ul>
@@ -154,6 +156,12 @@ h3 {
   font-weight: 600;
 }
 
+.request-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .chat-requests-list {
   list-style-type: none;
   padding: 0;
@@ -186,6 +194,7 @@ h3 {
 .chat-request-buttons {
   display: flex;
   gap: 8px;
+  margin-top: 5px;
 }
 
 .chat-request-accept,

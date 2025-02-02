@@ -319,7 +319,7 @@ export default {
   display: flex;
   flex-direction: row;
   height: 100vh;
-  width: 100%; /* Use 100% instead of 100vw */
+  width: 100%;
   overflow: hidden;
 }
 html,
@@ -328,7 +328,7 @@ body {
   padding: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden; /* Prevent scrollbars */
+  overflow: hidden;
 }
 
 * {

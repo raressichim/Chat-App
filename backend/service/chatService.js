@@ -212,6 +212,14 @@ const updateRequest = async (req, res) => {
       });
     }
 
+    if (status === "rejected") {
+      await chatRequestRef.delete();
+      console.log("Chat request deleted with ID: ", requestId);
+      return res
+        .status(200)
+        .json({ success: true, message: "Chat request rejected and deleted." });
+    }
+
     await chatRequestRef.update({ status });
 
     let chatId = null;
