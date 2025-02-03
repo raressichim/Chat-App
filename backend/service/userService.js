@@ -94,11 +94,10 @@ const loginUser = async (req, res) => {
     .get();
 
   if (querySnapshot.empty) {
-    return res.status(401).send("Unauthorized");
+    return res.status(404).send("Email not found");
   }
 
   const userData = querySnapshot.docs[0].data();
-
   const isPasswordValid = await verifyPassword(password, userData.password);
 
   if (isPasswordValid) {
