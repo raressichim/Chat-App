@@ -7,7 +7,7 @@ const hashPassword = async (password) => {
   return await bcrypt.hash(password, saltRounds);
 };
 
-async function generateUsers(count = 10) {
+async function generateUsers(count = 15) {
   const users = [];
   for (let i = 0; i < count; i++) {
     const firstName = faker.person.firstName();
@@ -15,7 +15,7 @@ async function generateUsers(count = 10) {
     const username = faker.internet
       .username({ firstName, lastName })
       .toLowerCase();
-    const password = await hashPassword("");
+    const password = await hashPassword("parola123");
     users.push({
       email: normalizeEmail(faker.internet.email({ firstName, lastName })),
       firstName,
@@ -27,22 +27,79 @@ async function generateUsers(count = 10) {
   return users;
 }
 
-async function generateChats(users, count = 5) {
+async function generateChats(users, count = 7) {
   const chats = [];
+  const nonGroupChats = []; // Track non-group chats
+
   for (let i = 0; i < count; i++) {
     const isGroup = faker.datatype.boolean();
-    const chat = {
-      createdAt: new Date(),
-      isGroup,
-      name: isGroup ? faker.lorem.words(2) : null,
-      users: faker.helpers.arrayElements(
-        users.map((u) => u.username),
-        { min: 2, max: 5 }
-      ),
-    };
+    let chat;
+
+    if (isGroup) {
+      // Ensure all group members have existing non-group chats with each other
+      let validGroupMembers = [];
+      let attempts = 0;
+
+      while (validGroupMembers.length < 3 && attempts < 10) {
+        const potentialMembers = faker.helpers.arrayElements(
+          users.map((u) => u.username),
+          { min: 3, max: 5 }
+        );
+
+        // Check if all potential members have non-group chats with each other
+        const isValidGroup = potentialMembers.every((member1) =>
+          potentialMembers.every((member2) => {
+            if (member1 === member2) return true; // Skip self
+            return nonGroupChats.some(
+              (chat) =>
+                chat.users.includes(member1) && chat.users.includes(member2)
+            );
+          })
+        );
+
+        if (isValidGroup) {
+          validGroupMembers = potentialMembers;
+        }
+        attempts++;
+      }
+
+      if (validGroupMembers.length >= 3) {
+        chat = {
+          createdAt: new Date(),
+          isGroup: true,
+          name: faker.lorem.words(2),
+          users: validGroupMembers,
+        };
+      } else {
+        // If no valid group can be formed, create a non-group chat instead
+        chat = {
+          createdAt: new Date(),
+          isGroup: false,
+          name: null,
+          users: faker.helpers.arrayElements(
+            users.map((u) => u.username),
+            { min: 2, max: 2 }
+          ),
+        };
+      }
+    } else {
+      // Create a non-group chat
+      chat = {
+        createdAt: new Date(),
+        isGroup: false,
+        name: null,
+        users: faker.helpers.arrayElements(
+          users.map((u) => u.username),
+          { min: 2, max: 2 }
+        ),
+      };
+      nonGroupChats.push(chat); // Track this non-group chat
+    }
+
     chat.messages = await generateMessages(chat.users);
     chats.push(chat);
   }
+
   return chats;
 }
 

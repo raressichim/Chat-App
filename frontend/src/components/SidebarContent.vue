@@ -108,9 +108,6 @@ export default {
     updateSearchQuery() {
       this.$emit("update-search-query", this.localSearchQuery);
     },
-    emitShowGroupForm() {
-      this.$emit("show-group-form");
-    },
   },
 };
 </script>
